@@ -1,0 +1,30 @@
+
+import(gWidgets)
+import(stats)
+import(utils)
+
+## latticist.R
+export(latticist)
+
+## latticistCompose.R
+export(latticistCompose,
+       reorderByFreq,
+       cutEq,
+       try.prepanel.loess,
+       n.level.colors,
+       simpleColorKey)
+
+## latticeStyleGUI.R
+export(latticeStyleGUI,
+       latticeStyleToBasePar,
+       panel.usertext,
+       panel.brushpoints,
+       panel.brushlines,
+       latticeStyleDemo,
+       custom.theme.2,
+       custom.theme.black)
+
+## settings
+export(latticist.options,
+       latticist.getOption)
+

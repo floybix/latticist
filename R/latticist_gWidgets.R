@@ -1,10 +1,12 @@
-
+## latticist: a Lattice-based exploratory visualisation GUI
+##
+## Copyright (c) 2008 Felix Andrews <felix@nfrac.org>
+## GPL version 2 or newer
 
 latticist_gWidgets <-
-    function(dat, spec = list(),
-             width = 480, height = 480, pointsize = 12)
+    function(dat, spec = list(), datArg = substitute(dat),
+             ..., width = 480, height = 480, pointsize = 12)
 {
-    datArg <- substitute(dat)
     title <- paste("Latticist:",
                    toString(deparse(datArg), width = 30))
 

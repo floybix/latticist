@@ -1,4 +1,4 @@
-## playwith: interactive plots in R using GTK+
+## latticist: a Lattice-based exploratory visualisation GUI
 ##
 ## Copyright (c) 2008 Felix Andrews <felix@nfrac.org>
 ## GPL version 2 or newer

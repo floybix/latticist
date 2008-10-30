@@ -1,129 +1,30 @@
-## playwith: interactive plots in R using GTK+
+## latticist: a Lattice-based exploratory visualisation GUI
 ##
 ## Copyright (c) 2008 Felix Andrews <felix@nfrac.org>
 ## GPL version 2 or newer
 
 NULLNAMES <- c("", "(none)", "NULL")
 
-latticist <-
+latticist_playwith <-
     function(dat,
              spec = list(),
-             reorder.levels = !is.table(dat),
+             datArg = substitute(dat),
              ...,
              labels = rownames(dat),
              time.mode = FALSE,
              height = playwith.getOption("height") - 1,
              plot.call)
 {
-    generateCall <- FALSE
-    if (!missing(dat)) {
-        ## dat argument was given (normal usage)
-        datArg <- substitute(dat)
-        if (missing(plot.call))
-            generateCall <- TRUE
+    stopifnot(require("playwith"))
 
-    } else {
-        ## dat argument missing
-        if (missing(plot.call))
-            stop("Give one of 'dat' or 'plot.call'.")
-        ## plot.call was given; try to extract data
-        dat <- NULL
-        datArg <- quote(unknown)
-        ## assuming the relevant lattice function is the outer call
-        ## check for named 'data' argument
-        if (!is.null(plot.call$data)) {
-            datArg <- plot.call$data
-        } else {
-            if (length(plot.call) <= 1) {
-                ## no arguments or NULL call
-                stop("Can not extract data from plot.call.")
-            } else {
-                ## one or more arguments
-                datArg <- plot.call[[2]]
-                dat <- eval.parent(datArg)
-                if (inherits(dat, "formula")) {
-                    ## try second argument if exists and un-named
-                    if ((length(plot.call) > 2) &&
-                        (is.null(names(plot.call)) ||
-                         identical(names(plot.call)[3], "")))
-                    {
-                        datArg <- plot.call[[3]]
-                    } else {
-                        stop("Can not extract data from plot.call.")
-                    }
-                }
-            }
-        }
-        if (is.null(dat))
-            dat <- eval.parent(datArg)
-    }
     title <- paste("Latticist:",
                    toString(deparse(datArg), width=30))
 
-    isOK <- is.data.frame(dat) || is.table(dat)
-    makeLocalCopy <- (isTRUE(reorder.levels) || !isOK)
-
-    if (makeLocalCopy) {
-
-        if (!isOK)
-            dat <- as.data.frame(dat)
-
-        if (is.table(dat)) {
-            if (reorder.levels)
-                dat <- reorderTableByFreq(dat)
-
-        } else {
-            ## dat is a data.frame
-
-            ## convert numerics with discrete values in {-1, 0, 1} to factors
-            isnum <- sapply(dat, is.numeric)
-            for (nm in names(dat)[isnum]) {
-                dd <- dat[[nm]]
-                ## test first 50 values first (quick check)
-                vals <- unique(head(dd, n=50))
-                if (all(vals[is.finite(vals)] %in% -1:1)) {
-                    if (all(range(dd, na.rm=TRUE) %in% -1:1) &&
-                        all(range(abs(diff(dd)), na.rm=TRUE) %in% 0:2))
-                    {
-                        dat[[nm]] <- factor(dd)
-                    }
-                }
-            }
-
-            if (reorder.levels) {
-                iscat <- sapply(dat, is.categorical)
-                for (nm in names(dat)[iscat]) {
-                    val <- dat[[nm]]
-                    if (is.character(val))
-                        dat[[nm]] <- factor(val)
-                    if (!is.ordered(val) &&
-                        !is.shingle(val) &&
-                        nlevels(val) > 1)
-                    {
-                        dat[[nm]] <- reorderByFreq(val)
-                    }
-                }
-            }
-
-        }
-
-        ## make a local copy of dat
-        if (is.symbol(datArg)) {
-            datNm <- paste(as.character(datArg),
-                           ".mod", sep = "")
-            datArg <- as.symbol(datNm)
-            assign(datNm, dat)
-        } else {
-            datNm <- "dat"
-            datArg <- as.symbol(datNm)
-        }
-    }
-
-    if (generateCall)
+    if (missing(plot.call))
         plot.call <-
-            latticistCompose(dat, spec, datArg = datArg)
+            latticistCompose(dat, spec = spec, datArg = datArg)
 
-    ## lattInit is the constructor (an init.action)
+    ## this is the constructor (an init.action)
     lattAction <- latticistToolConstructor(dat, datArg = datArg)
     ## this list will store state in playState$latticist
     lattState <- latticistInitOptions(dat, datArg = datArg)
@@ -141,107 +42,6 @@ latticist <-
              latticist = lattState)
 }
 
-latticistInitOptions <- function(dat, datArg)
-{
-    stuff <- list()
-    datNm <- toString(deparse(datArg))
-
-    if (is.table(dat)) {
-        ## dat is a table
-        stuff$varexprs <-
-            c(NULLNAMES[[1]],
-              names(dimnames(dat)))
-
-        ## subsets -- preload some useful subsets
-        subsetopts <- NULLNAMES[[1]]
-        ## preload factor levels (only most frequent two of each)
-        dimn <- dimnames(dat)
-        toplev <- lapply(names(dimn), function(nm) {
-            paste(nm, "==", head(dimn[[nm]], 2))
-        })
-        subsetopts <- c(subsetopts, unlist(toplev))
-        subsetopts <- c(subsetopts, "------------------")
-        stuff$subsetopts <- subsetopts
-
-    } else {
-        ## dat is a data.frame
-
-        ## which variables are categorical (vs numeric)
-        iscat <- sapply(dat, is.categorical)
-
-        ## variables and expressions
-        ## group into categorical vs numeric
-        stuff$varexprs <-
-            c(NULLNAMES[[1]],
-              names(dat)[iscat],
-              if (any(iscat) && any(!iscat))
-              "------------------",
-              names(dat)[!iscat],
-              "-------------------",
-              sprintf("1:nrow(%s)", datNm))
-
-        ## subsets -- preload some useful subsets
-        subsetopts <- NULLNAMES[[1]]
-        ## preload factor levels (only first two of each)
-        toplev <- lapply(names(dat)[iscat], function(nm) {
-            if (is.factor(dat[[nm]])) {
-                tmp <- head(levels(dat[[nm]]), 2)
-                paste(nm, "==", sapply(tmp, deparse))
-            } else if (is.logical(dat[[nm]])) {
-                paste(nm, "==", c("TRUE", "FALSE"))
-            } else {
-                tmp <- names(sort(table(dat[[nm]]), decreasing=TRUE))
-                #tmp <- tmp[seq_len(min(2, length(tmp)))] ## top 2
-                tmp <- head(tmp, 2)
-                paste(nm, "==", sapply(tmp, deparse))
-            }
-        })
-        subsetopts <- c(subsetopts, unlist(toplev))
-        subsetopts <- c(subsetopts, "------------------")
-        if (nrow(dat) >= LOTS) {
-            ## a regular sample down by one order of magnitude
-            subN <- 10 ^ (round(log10(nrow(dat))) - 1)
-            subsetopts <- c(subsetopts,
-                            sprintf("seq(1, nrow(%s), length = %i)",
-                                    datNm, subN))
-            subsetopts <- c(subsetopts, "-----------------")
-        }
-        ## is.finite() of variables with missing values
-        missings <- lapply(names(dat), function(nm) {
-            if (any(is.na(dat[[nm]])))
-                paste("!is.na(", nm, ")", sep="")
-            else NULL
-        })
-        missings <- unlist(missings)
-        if (length(missings) > 0) {
-            subsetopts <- c(subsetopts,
-                            sprintf("complete.cases(%s)", datNm))
-        }
-        subsetopts <- c(subsetopts, missings)
-        stuff$subsetopts <- subsetopts
-    }
-
-    ## aspect
-    stuff$aspectopts <-
-        c(NULLNAMES[[1]],
-          '"fill"', '"iso"', '"xy"',
-          '0.5', '1', '2')
-    ## scales
-    stuff$scalesopts <-
-        c(NULLNAMES[[1]],
-          "x same, y same",
-          "x same, y free",
-          "x free, y same",
-          "x free, y free",
-          "------------------",
-          "x sliced, y sliced",
-          "x sliced, y same",
-          "x sliced, y free",
-          "x same, y sliced",
-          "x free, y sliced")
-
-    stuff
-}
 
 latticistToolConstructor <- function(dat, datArg)
 {
@@ -928,15 +728,6 @@ latticistToolConstructor <- function(dat, datArg)
 
         return(NA)
     }
-}
-
-reorderTableByFreq <- function(x)
-{
-    stopifnot(is.table(x))
-    df <- as.data.frame(x)
-    i <- which(names(df) == "Freq")
-    df[-i] <- lapply(df[-i], reorder, - df$Freq)
-    xtabs(Freq ~ ., df)
 }
 
 .profLatticist <- function(n = 20000) {

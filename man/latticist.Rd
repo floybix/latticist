@@ -9,10 +9,7 @@ latticist(dat,
           spec = list(),
           reorder.levels = !is.table(dat),
           ...,
-          labels = rownames(dat),
-          time.mode = FALSE,
-          height = playwith.getOption("height") - 1,
-          plot.call)
+          use.playwith = latticist.getOption("use.playwith"))
 }
 \arguments{
   \item{dat}{ a \code{data frame} (with numeric and/or categorical variables),
@@ -31,30 +28,66 @@ latticist(dat,
     In addition, numeric variables with discrete values in {0, 1, -1}
     are converted to factors.
   }
-  \item{plot.call}{ call defining the initial plot display.
-    This can be given instead of \code{dat}, and the dataset will be
-    derived from it (see examples). }
-  \item{\dots, labels, time.mode, height}{
-    further arguments passed to \code{\link{playwith}}.
+  \item{use.playwith}{
+    whether to launch as a toolbar for \code{playwith} (requires the
+    \pkg{playwith} package), or a generic \pkg{gWidgets} interface.
+  }
+  \item{\dots}{
+    further arguments specific to the interface type. For the \code{playwith}
+    interface, these are passed to \code{\link[playwith]{playwith}}. For
+    the \code{gWidgets} interface, these are:
+    \describe{
+      \item{\code{width = 480, height = 480}}{
+	size of the graphics device in pixels.
+      }
+      \item{\code{pointsize = 12}}{
+	text size on the graphics device.
+      }
   }
 }
 \details{
-  Latticist is an extension to \code{\link{playwith}}, adding a
-  toolbar to construct lattice displays for a given dataset.
-  As such, many of the features, such as style settings and linked
-  brushing, are (or should be) described in the help for
-  \code{\link{playwith}}.
+  Latticist is a graphical user interface for exploratory visualisation.
+  It is primarily an interface to the Lattice graphics system  (from the
+  \pkg{lattice} package), but also produces displays from the \pkg{vcd}
+  package for categorical data.
 
-  It is recommended to install the \pkg{deldir} package, as well as
-  \pkg{hexbin}, a BioConductor package, which can be installed as follows:
+  Given a multivariate dataset (either a \code{data frame} or a
+  \code{table}), Latticist attempts to produce useful displays based on
+  the properties of the data. The user chooses variables or expressions
+  for the plot axes, for grouping, conditioning and subsetting. Some
+  hypervariate displays are also available.
+
+  A minimal graphical user interface is available, built on the
+  \pkg{gWidgets} package. This should run with any of the "toolkit
+  implementations", such as:
+  \pkg{gWidgetstcltk}
+  \pkg{gWidgetsRGtk2}
+  \pkg{gWidgetsrJava}
+  \pkg{gWidgetsWWW}
+
+  The fastest way to start, without any external system requirements, is
+  to \code{install.packages("gWidgetstcltk")}. However, that does not
+  support an embedded graphics device, so the plots will appear in a
+  separate window.
+
+  Alternatively, Latticist can be run as an toolbar extension to
+  \code{\link[playwith]{playwith}}.
+  This brings many extra features, such as dynamic zooming, identifying
+  data points, linked brushing, etc. Note that the \pkg{playwith}
+  package requires \pkg{RGtk2} and, therefore, the \code{GTK+} libraries.
+
+  To enable all types of graphic displays, install the \pkg{deldir}
+  package, as well as \pkg{hexbin}, a BioConductor package, which can be
+  installed as follows:
 
   \code{source("http://bioconductor.org/biocLite.R")}
 
   \code{biocLite("hexbin")}
 }
 \value{
-  invisibly returns the \code{playState} object representing the plot
-  window: see \link{playwith.API}.
+  The \pkg{playwith} method invisibly returns the \code{playState}
+  object representing the plot window. The \pkg{gWidgets} method
+  invisibly returns the \code{gwindow} object.
 }
 \author{ Felix Andrews \email{felix@nfrac.org} }
 \references{
@@ -64,37 +97,42 @@ Sarkar, Deepayan (2008) "Lattice: Multivariate Data Visualization with
 R", Springer. \url{http://lmdvr.r-forge.r-project.org/}
 }
 \seealso{
-  \code{\link{playwith}},
+  \code{\link{latticistCompose}},
   \link[lattice]{Lattice},
   \code{lattice.demo} in the \pkg{TeachingDemos} package. }
 \examples{
 if (interactive()) {
 options(device.ask.default = FALSE)
+askNext <- function()
+    stopifnot(gconfirm("Press OK for next example..."))
+
+## data.frame example
 
 ## CO2 dataset: see ?CO2
 ## From an experiment on the cold tolerance of a grass species.
 latticist(CO2)
+
 ## The following sequence would normally be interactive:
-stopifnot(gconfirm("Press OK for next example..."))
+askNext()
 latticist(CO2, spec = list(yvar = "uptake"))
-stopifnot(gconfirm("Press OK for next example..."))
+askNext()
 latticist(CO2, spec = list(yvar = "uptake", xvar = "conc"))
-stopifnot(gconfirm("Press OK for next example..."))
+askNext()
 latticist(CO2, spec = list(yvar = "uptake", xvar = "conc",
                             groups = "Treatment"))
-stopifnot(gconfirm("Press OK for next example..."))
+askNext()
 latticist(CO2, spec = list(yvar = "uptake", xvar = "conc",
                             groups = "Treatment", cond = "Type"))
-stopifnot(gconfirm("Press OK for next example..."))
+askNext()
 latticist(CO2, spec = list(yvar = "uptake", xvar = "conc",
                             cond = "Plant"))
-stopifnot(gconfirm("Press OK for next example..."))
+askNext()
 
-## environmental dataset: see ?environmental
-## Daily measurements related to ozone pollution in NYC 1973.
-## Specify initial display directly:
-latticist(plot.call = quote(parallel(environmental, col = 1)),
-    click.mode = "Brush")
+## table example
+
+## Titanic dataset: Survival of passengers on the Titanic
+## summarised by economic status (class), sex, age and survival.
+latticist(Titanic)
 
 }
 }

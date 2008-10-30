@@ -15,16 +15,24 @@ export(latticistCompose,
        simpleColorKey)
 
 ## latticeStyleGUI.R
-export(latticeStyleGUI,
-       latticeStyleToBasePar,
-       panel.usertext,
-       panel.brushpoints,
-       panel.brushlines,
-       latticeStyleDemo,
-       custom.theme.2,
-       custom.theme.black)
+export(latticeStyleGUI)
 
-## settings
+## latticeStyleDemo.R
+expot(latticeStyleDemo)
+
+## custom.theme.black.R
+export(custom.theme.black,
+       custom.theme.2)
+
+## latticeStyleToBasePar.R
+export(latticeStyleToBasePar)
+
+## panel.misc.R
+export(panel.usertext,
+       panel.brushpoints,
+       panel.brushlines)
+
+## options.R
 export(latticist.options,
        latticist.getOption)
 

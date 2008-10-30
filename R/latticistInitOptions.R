@@ -11,19 +11,16 @@ latticistInitOptions <- function(dat, datArg)
     if (is.table(dat)) {
         ## dat is a table
         stuff$varexprs <-
-            c(NULLNAMES[[1]],
-              names(dimnames(dat)))
+            c("", names(dimnames(dat)))
 
-        ## subsets -- preload some useful subsets
-        subsetopts <- NULLNAMES[[1]]
+        ## subsets
         ## preload factor levels (only most frequent two of each)
         dimn <- dimnames(dat)
         toplev <- lapply(names(dimn), function(nm) {
             paste(nm, "==", head(dimn[[nm]], 2))
         })
-        subsetopts <- c(subsetopts, unlist(toplev))
-        subsetopts <- c(subsetopts, "------------------")
-        stuff$subsetopts <- subsetopts
+        stuff$subsetopts <-
+            c("", unlist(toplev))
 
     } else {
         ## dat is a data.frame
@@ -34,7 +31,7 @@ latticistInitOptions <- function(dat, datArg)
         ## variables and expressions
         ## group into categorical vs numeric
         stuff$varexprs <-
-            c(NULLNAMES[[1]],
+            c("",
               names(dat)[iscat],
               if (any(iscat) && any(!iscat))
               "------------------",
@@ -42,8 +39,7 @@ latticistInitOptions <- function(dat, datArg)
               "-------------------",
               sprintf("1:nrow(%s)", datNm))
 
-        ## subsets -- preload some useful subsets
-        subsetopts <- NULLNAMES[[1]]
+        ## subsets
         ## preload factor levels (only first two of each)
         toplev <- lapply(names(dat)[iscat], function(nm) {
             if (is.factor(dat[[nm]])) {
@@ -58,15 +54,16 @@ latticistInitOptions <- function(dat, datArg)
                 paste(nm, "==", sapply(tmp, deparse))
             }
         })
-        subsetopts <- c(subsetopts, unlist(toplev))
-        subsetopts <- c(subsetopts, "------------------")
+        subsetopts <- c("", unlist(toplev),
+                        "------------------")
         if (nrow(dat) >= LOTS) {
             ## a regular sample down by one order of magnitude
             subN <- 10 ^ (round(log10(nrow(dat))) - 1)
-            subsetopts <- c(subsetopts,
-                            sprintf("seq(1, nrow(%s), length = %i)",
-                                    datNm, subN))
-            subsetopts <- c(subsetopts, "-----------------")
+            subsetopts <-
+                c(subsetopts,
+                  sprintf("seq(1, nrow(%s), length = %i)",
+                          datNm, subN),
+                  "-----------------")
         }
         ## is.finite() of variables with missing values
         missings <- lapply(names(dat), function(nm) {
@@ -85,12 +82,12 @@ latticistInitOptions <- function(dat, datArg)
 
     ## aspect
     stuff$aspectopts <-
-        c(NULLNAMES[[1]],
+        c("",
           '"fill"', '"iso"', '"xy"',
           '0.5', '1', '2')
     ## scales
     stuff$scalesopts <-
-        c(NULLNAMES[[1]],
+        c("",
           "x same, y same",
           "x same, y free",
           "x free, y same",

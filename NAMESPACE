@@ -18,7 +18,7 @@ export(latticistCompose,
 export(latticeStyleGUI)
 
 ## latticeStyleDemo.R
-expot(latticeStyleDemo)
+export(latticeStyleDemo)
 
 ## custom.theme.black.R
 export(custom.theme.black,
@@ -27,10 +27,8 @@ export(custom.theme.black,
 ## latticeStyleToBasePar.R
 export(latticeStyleToBasePar)
 
-## panel.misc.R
-export(panel.usertext,
-       panel.brushpoints,
-       panel.brushlines)
+## usertext.R
+#export(panel.usertext)
 
 ## options.R
 export(latticist.options,

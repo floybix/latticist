@@ -3,7 +3,8 @@
 ## Copyright (c) 2008 Felix Andrews <felix@nfrac.org>
 ## GPL version 2 or newer
 
-NULLNAMES <- c("", "(none)", "NULL")
+## TODO: get rid of this, just use ""
+#NULLNAMES <- c("", "(none)", "NULL")
 
 latticist_playwith <-
     function(dat,
@@ -16,6 +17,7 @@ latticist_playwith <-
              plot.call)
 {
     stopifnot(require("playwith"))
+    stopifnot(require("RGtk2"))
 
     title <- paste("Latticist:",
                    toString(deparse(datArg), width=30))
@@ -122,8 +124,8 @@ latticistToolConstructor <- function(dat, datArg)
                              xvarStr, yvarStr, zvarStr,
                              condStr, cond2Str, groupsStr))
         ## replace all synonyms of "NULL" with just one
-        varexprs <- varexprs[!(varexprs %in% NULLNAMES)]
-        varexprs <- c(NULLNAMES[[1]], varexprs)
+        #varexprs <- varexprs[!(varexprs %in% NULLNAMES)]
+        #varexprs <- c(NULLNAMES[[1]], varexprs)
         playState$latticist$varexprs <- varexprs
 
         ## update subset options
@@ -223,7 +225,7 @@ latticistToolConstructor <- function(dat, datArg)
         addCBEHandlers(subsetW,
                        function(...) {
                            val <- subsetW$getActiveText()
-                           if (val %in% NULLNAMES)
+                           if (identical(val, ""))
                                val <- NULL
                            playState$latticist$spec$subset <- val
                            reCompose(playState)
@@ -237,10 +239,7 @@ latticistToolConstructor <- function(dat, datArg)
         choosevarsW <- niceButton("choose variables")
         choosevarsW["visible"] <- (is.null(xvar) && is.null(yvar))
         gSignalConnect(choosevarsW, "button-press-event",
-                       function(...) {
-                           if (isTRUE(doChooseVars()))
-                               reCompose(playState)
-                       })
+                       function(...) goHyper(user.data = NULL))
         hyperBox0$packStart(choosevarsW)
         setBox$packStart(hyperBox0, expand=FALSE, padding = 1)
         ## hypervar reset buttons
@@ -265,7 +264,9 @@ latticistToolConstructor <- function(dat, datArg)
             playState$latticist$spec$xvar <- NULL
             playState$latticist$spec$yvar <- NULL
             playState$latticist$spec$zvar <- NULL
-            playState$latticist$spec$defaultPlot <- user.data
+            if (!is.null(user.data))
+                playState$latticist$spec$defaultPlot <-
+                    user.data
             reCompose(playState, newPlot = TRUE)
         }
         gSignalConnect(marginalsW, "clicked", goHyper,
@@ -351,7 +352,7 @@ latticistToolConstructor <- function(dat, datArg)
         addCBEHandlers(yvarW,
                        function(...) {
                            val <- yvarW$getActiveText()
-                           if (val %in% NULLNAMES)
+                           if (identical(val, ""))
                                val <- NULL
                            playState$latticist$spec$yvar <- val
                            reCompose(playState, newPlot = TRUE)
@@ -393,7 +394,7 @@ latticistToolConstructor <- function(dat, datArg)
         addCBEHandlers(xvarW,
                        function(...) {
                            val <- xvarW$getActiveText()
-                           if (val %in% NULLNAMES)
+                           if (identical(val, ""))
                                val <- NULL
                            playState$latticist$spec$xvar <- val
                            reCompose(playState, newPlot = TRUE)
@@ -431,7 +432,7 @@ latticistToolConstructor <- function(dat, datArg)
         addCBEHandlers(aspectW,
                        function(...) {
                            val <- aspectW$getActiveText()
-                           if (val %in% NULLNAMES)
+                           if (identical(val, ""))
                                val <- NULL
                            if (!is.null(val))
                                val <- parse(text = val)[[1]]
@@ -515,7 +516,7 @@ latticistToolConstructor <- function(dat, datArg)
         addCBEHandlers(groupsW,
                        function(...) {
                            val <- groupsW$getActiveText()
-                           if (val %in% NULLNAMES)
+                           if (identical(val, ""))
                                val <- NULL
                            playState$latticist$spec$groups <- val
                            reCompose(playState)
@@ -578,7 +579,7 @@ latticistToolConstructor <- function(dat, datArg)
         addCBEHandlers(zvarW,
                        function(...) {
                            val <- zvarW$getActiveText()
-                           if (val %in% NULLNAMES)
+                           if (identical(val, ""))
                                val <- NULL
                            playState$latticist$spec$zvar <- val
                            reCompose(playState, newPlot = TRUE)
@@ -639,7 +640,7 @@ latticistToolConstructor <- function(dat, datArg)
         addCBEHandlers(condW,
                        function(...) {
                            val <- condW$getActiveText()
-                           if (val %in% NULLNAMES)
+                           if (identical(val, ""))
                                val <- NULL
                            playState$latticist$spec$cond <- val
                            reCompose(playState, newPlot = TRUE)
@@ -660,7 +661,7 @@ latticistToolConstructor <- function(dat, datArg)
         addCBEHandlers(cond2W,
                        function(...) {
                            val <- cond2W$getActiveText()
-                           if (val %in% NULLNAMES)
+                           if (identical(val, ""))
                                val <- NULL
                            playState$latticist$spec$cond2 <- val
                            reCompose(playState, newPlot = TRUE)
@@ -714,13 +715,14 @@ latticistToolConstructor <- function(dat, datArg)
         ## add it directly to the window (not a toolbar!)
         ## use blockRedraws() to maintain current device size
 
+        ## TODO : make it a persistent box, just update the UI!
         if (!is.null(playState$widgets$latticist)) {
-            hideWidgetNoRedraw(playState$widgets$latticist,
+            playwith:::hideWidgetNoRedraw(playState$widgets$latticist,
                                horiz = TRUE,
                                playState = playState)
             playState$widgets$latticist$destroy()
         }
-        blockRedraws({
+        playwith:::blockRedraws({
             playState$widgets$vbox$packEnd(box, expand=FALSE)
         }, playState = playState)
 

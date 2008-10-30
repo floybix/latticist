@@ -106,10 +106,9 @@ latticist_gWidgets <-
     }
 
     setSpec <- function(h, ...) {
-        callTextChanged <<- FALSE
         target <- h$action
         val <- svalue(h$obj)
-        if (val %in% NULLNAMES)
+        if (identical(val, ""))
             val <- NULL
         lattState$spec[[target]] <<- val
         reCompose()
@@ -305,38 +304,21 @@ latticist_gWidgets <-
     return(invisible(win))
 }
 
-
-latticistChooseVars <- function(dat, spec = list())
+deparseOneLine <-
+    function(expr, width.cutoff = 500, ...)
 {
-    ## applies to hypervariate plots:
-    ## splom, parallel and marginal.plot
-    if (is.table(dat)) return(list(ok = TRUE))
-    vars <- names(dat)
-    checked <- spec$varSubset
-    if (!is.null(checked))
-        checked <- vars %in% checked
-    if (is.null(checked))
-        checked <- TRUE
-    theW <- ggroup(horizontal = FALSE)
-    tmpg <- ggroup(horizontal = TRUE, container = theW)
-    varsW <- gcheckboxgroup(vars, checked = checked, container = theW)
-    gbutton("All", container = tmpg,
-            handler = function(h, ...) svalue(varsW) <- vars )
-    gbutton("None", container = tmpg,
-            handler = function(h, ...) svalue(varsW) <- NULL )
-    glabel(paste("NOTE: too many variables will result in a very slow",
-                 "\nplot, especially so for splom (scatter plot matrix)."),
-           container = theW)
-    result <- list()
-    foo <- gbasicdialog(title = "Choose variables to plot",
-                 widget = theW,
-                 handler = function(h, ...) {
-                     varsub <- svalue(varsW)
-                     if (identical(varsub, vars))
-                         varsub <- NULL
-                     result$varSubset <<- varsub
-                     dispose(h$obj)
-                 })
-    result$ok <- isTRUE(foo)
-    result
+    tmp <- deparse(expr, width.cutoff = width.cutoff, ...)
+    indents <- attr(regexpr("^ *", tmp), "match.length")
+    breaks <- c(diff(indents) <= 0, FALSE)
+    tmp <- gsub("^ +", "", tmp)
+    tmp <- gsub(" +$", "", tmp)
+    breaks[c(tmp[-1]=="{", FALSE)] <- F
+    tmp <- paste(tmp, ifelse(breaks, ";", ""), sep="", collapse=" ")
+    tmp <- gsub("\\{;", "\\{", tmp)
+    tmp <- gsub(";\\}", " \\}", tmp)
+    tmp <- gsub(";\\{", " \\{", tmp)
+    ## update: need this for long inline vectors:
+    tmp <- gsub(";,", ",", tmp)
+    tmp <- gsub(",;", ",", tmp)
+    tmp
 }

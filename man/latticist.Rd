@@ -43,6 +43,7 @@ latticist(dat,
       \item{\code{pointsize = 12}}{
 	text size on the graphics device.
       }
+    }
   }
 }
 \details{
@@ -58,23 +59,20 @@ latticist(dat,
   hypervariate displays are also available.
 
   A minimal graphical user interface is available, built on the
-  \pkg{gWidgets} package. This should run with any of the "toolkit
-  implementations", such as:
-  \pkg{gWidgetstcltk}
-  \pkg{gWidgetsRGtk2}
-  \pkg{gWidgetsrJava}
-  \pkg{gWidgetsWWW}
+  \pkg{gWidgets} package. This requires one of the "toolkit
+  implementations" to installed:
+  \pkg{gWidgetstcltk}, \pkg{gWidgetsRGtk2} or \pkg{gWidgetsrJava}.
 
   The fastest way to start, without any external system requirements, is
   to \code{install.packages("gWidgetstcltk")}. However, that does not
   support an embedded graphics device, so the plots will appear in a
   separate window.
 
-  Alternatively, Latticist can be run as an toolbar extension to
+  Alternatively, Latticist can be run as a toolbar extension to
   \code{\link[playwith]{playwith}}.
   This brings many extra features, such as dynamic zooming, identifying
   data points, linked brushing, etc. Note that the \pkg{playwith}
-  package requires \pkg{RGtk2} and, therefore, the \code{GTK+} libraries.
+  package requires \pkg{RGtk2} and, therefore, the \emph{GTK+} libraries.
 
   To enable all types of graphic displays, install the \pkg{deldir}
   package, as well as \pkg{hexbin}, a BioConductor package, which can be

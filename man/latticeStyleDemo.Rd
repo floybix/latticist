@@ -20,7 +20,10 @@ latticeStyleDemo(type = c("plot", "superpose", "polygons", "regions"))
   because the latter also applies to strip text and key text.
 }
 \author{ Felix Andrews \email{felix@nfrac.org} }
-\seealso{ \code{\link[lattice]{show.settings}}, \code{\link{panel.usertext}} }
+\seealso{
+  \code{\link[lattice]{show.settings}}
+  \code{\link[playwith]{panel.usertext}}
+}
 \examples{
 latticeStyleDemo()
 latticeStyleDemo("plot")

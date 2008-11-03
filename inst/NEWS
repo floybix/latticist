@@ -1,0 +1,15 @@
+
+Changes in Version 0.9-40
+
+  o split Latticist out from 'playwith' into a new package.
+
+  o latticist() is now a general interface, which can launch
+    either a playwith-based GUI or a gWidgets-based GUI.
+
+  o Latticist now supports table objects.
+
+  o use package 'vcd' to produce a mosaic plot when
+    two or more categorical variables are plotted.
+
+  o code simplified; function latticistParse() defunct.
+

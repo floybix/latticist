@@ -27,6 +27,9 @@ latticist <-
              use.playwith = latticist.getOption("use.playwith"))
 {
     datArg <- substitute(dat)
+    datName <- toString(deparse(datArg), width = 30)
+
+    use.playwith <- (use.playwith && require("playwith"))
 
     isOK <- is.data.frame(dat) || is.table(dat)
     makeLocalCopy <- (isTRUE(reorder.levels) || !isOK)
@@ -75,26 +78,25 @@ latticist <-
 
         }
 
-        ## make a local copy of dat
-        if (is.symbol(datArg)) {
-            datNm <- paste(as.character(datArg),
-                           ".mod", sep = "")
-            datArg <- as.symbol(datNm)
-            assign(datNm, dat)
+        ## refer to the local copy of dat
+        if (is.symbol(datArg) && use.playwith) {
+            datArgNm <- paste(as.character(datArg),
+                              ".mod", sep = "")
+            datArg <- as.symbol(datArgNm)
+            assign(datArgNm, dat)
         } else {
-            datNm <- "dat"
-            datArg <- as.symbol(datNm)
+            datArg <- quote(dat)
         }
     }
 
-    if (use.playwith && require("playwith")) {
+    if (use.playwith) {
         latticist_playwith(dat, spec = spec, datArg = datArg,
-                           ...)
+                           datName = datName, ...)
 
     } else {
         ## use gWidgets
         latticist_gWidgets(dat, spec = spec, datArg = datArg,
-                           ...)
+                           datName = datName, ...)
     }
 }
 

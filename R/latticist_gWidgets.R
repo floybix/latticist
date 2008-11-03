@@ -4,11 +4,16 @@
 ## GPL version 2 or newer
 
 latticist_gWidgets <-
-    function(dat, spec = list(), datArg = substitute(dat),
-             ..., width = 480, height = 480, pointsize = 12)
+    function(dat,
+             spec = list(),
+             datArg = substitute(dat),
+             datName = "dat",
+             ...,
+             width = 480,
+             height = 480,
+             pointsize = 12)
 {
-    title <- paste("Latticist:",
-                   toString(deparse(datArg), width = 30))
+    title <- paste("Latticist:", datName)
 
     ## this list will store state
     lattState <- latticistInitOptions(dat, datArg = datArg)
@@ -47,8 +52,21 @@ latticist_gWidgets <-
 
     reCompose <- function() {
         dev.set(targetDev)
-        plot.call <<- latticistCompose(dat, lattState$spec,
-                                       datArg = datArg)
+        if (isTRUE(latticist.getOption("catch.errors"))) {
+            tmp <- tryCatch(latticistCompose(dat, lattState$spec,
+                                             datArg = datArg),
+                            error = force)
+            if (inherits(tmp, "error")) {
+                gmessage(conditionMessage(tmp),
+                         title = "Error", icon = "error")
+                stop(tmp)
+            }
+            plot.call <<- tmp
+        } else {
+            plot.call <<-
+                latticistCompose(dat, lattState$spec,
+                                 datArg = datArg)
+        }
         callTxt <- deparseOneLine(plot.call, control = NULL)
         ## check whether anything changed
         if (identical(callTxt, svalue(wid.call)))
@@ -103,6 +121,10 @@ latticist_gWidgets <-
             (prod(dim(trellis.last.object())) > 1)
         enabled(wid.scales) <- !isVCD && hasPanels
         enabled(wid.separate.strata) <- isVCD
+        enabled(wid.identify) <-
+            (!is.table(dat) && !isVCD &&
+             !is.call.to(plot.call, "marginal.plot") &&
+             !is.call.to(plot.call, "parallel"))
     }
 
     setSpec <- function(h, ...) {
@@ -115,30 +137,35 @@ latticist_gWidgets <-
     }
 
     ## (Title)
-    txt <- paste("Latticist",
-                 packageDescription("playwith")$Version)
-    glabel(paste("<big><b><i>", txt, "</i></b></big>"),
-           markup = TRUE, container = vgroup)
+    tmpg <- ggroupThin(container = vgroup)
+    gimage(system.file("etc", "latticist_title.gif", package="latticist"),
+           container = tmpg)
+    glabel(paste(" v.", packageDescription("playwith")$Version),
+           container = tmpg)
 
     ## HYPERVARIATE
     hyperg <- gframe("Hypervariate", horizontal = FALSE, expand = FALSE, container = vgroup)
     tmpg <- ggroupThin(container = hyperg)
     goHyper <- function(h, ...) {
         ## ask user to choose variables, or cancel
-        result <- latticistChooseVars(dat, spec = lattState$spec)
-        if (!isTRUE(result$ok)) return()
-        lattState$spec$varSubset <<- result$varSubset
-        lattState$spec$xvar <<- NULL
-        lattState$spec$yvar <<- NULL
-        lattState$spec$zvar <<- NULL
-        lattState$spec$defaultPlot <<- h$action
-        reCompose()
+        latticistChooseVars(dat, spec = lattState$spec,
+                            handler = function(value)
+                        {
+                            lattState$spec$varSubset <<- value
+                            lattState$spec$xvar <<- NULL
+                            lattState$spec$yvar <<- NULL
+                            lattState$spec$zvar <<- NULL
+                            lattState$spec$defaultPlot <<- h$action
+                            reCompose()
+                        })
     }
     gbutton("marginals", container = tmpg,
             handler = goHyper, action = "marginal.plot")
     gbutton("splom (pairs)", container = tmpg,
             handler = goHyper, action = "splom")
-    gbutton("parallel", container = tmpg,
+    parallelTxt <- "parallel"
+    if (is.table(dat)) parallelTxt <- "table"
+    gbutton(parallelTxt, container = tmpg,
             handler = goHyper, action = "parallel")
 
     ## VARIABLES ON AXES
@@ -289,14 +316,36 @@ latticist_gWidgets <-
     ## CALL
     callg <- gframe("Plot call", horizontal = FALSE, container = vgroup)
     wid.call <-
-        gtext("", container = callg,
+        gtext("", width = 160, height = 80, container = callg,
               font.attr = c(family = "monospace"))
+    tmpg <- ggroupThin(container = callg)
     wid.redraw <-
-        gbutton("Redraw", container = callg,
+        gbutton("Redraw", container = tmpg,
                 handler = function(...) {
                     dev.set(targetDev)
                     plot.call <- parse(text = svalue(wid.call))[[1]]
                     eval(call("print", plot.call))
+                })
+    wid.identify <-
+        gbutton("Identify", container = tmpg,
+                handler = function(...) {
+                    enabled(vgroup) <- FALSE
+                    on.exit(enabled(vgroup) <- TRUE)
+                    dev.set(targetDev)
+                    isMultiPanel <-
+                        (length(trellis.currentLayout()) > 1)
+                    trellis.focus(highlight = isMultiPanel)
+                    on.exit(trellis.unfocus(), add = TRUE)
+                    labels <- rownames(dat)
+                    if (is.call.to(plot.call, "splom")) {
+                        panel.link.splom()
+                    } else if (is.call.to(plot.call, "qqmath")) {
+                        panel.identify.qqmath(labels = labels)
+                    } else if (is.call.to(plot.call, "cloud")) {
+                        panel.identify.cloud(labels = labels)
+                    } else {
+                        panel.identify(labels = labels)
+                    }
                 })
 
     reCompose()

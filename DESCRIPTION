@@ -2,10 +2,10 @@ Package: latticist
 Type: Package
 Title: A Lattice-based tool for exploratory visualisation
 Version: 0.9-40
-Date: 2008-10-30
+Date: 2008-11-03
 Author: Felix Andrews <felix@nfrac.org>
 Maintainer: Felix Andrews <felix@nfrac.org>
-Depends: lattice (>= 0.16-3), latticeExtra (>= 0.5-3), vcd
+Depends: lattice (>= 0.16-3), latticeExtra (>= 0.5-4), vcd
 Imports: gWidgets (>= 0.0-30), stats, utils
 Suggests: playwith, hexbin, deldir, tripack, DAAG, RGtk2
 Description: Latticist is a graphical user interface for exploratory

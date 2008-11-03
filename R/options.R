@@ -5,10 +5,33 @@
 
 .defaultLatticistOptions <- function()
     list(
-         sub = TRUE,
          use.playwith = TRUE,
+         defaultPlot = "marginal.plot",
+         xyLineType = "smooth",
+         sub.fn = defaultSubFn,
+         LOTS = 1000,
+         HEAPS = 8000,
+         disc.levels = 4,
+         max.panels = 16,
          catch.errors = TRUE
          )
+
+defaultSubFn <- function(spec, nPoints)
+{
+    Rvers <- paste("R ", R.version$major, ".",
+                   R.version$minor, R.version$status, sep="")
+    subt <- if (nPoints > 0)
+        paste("N = ", nPoints, ", ", sep="") else ""
+    subt <- paste(subt, toString(Sys.Date()), ", ",
+                  Rvers, sep="")
+    subset <- spec$subset
+    if (!is.null(subset)) {
+        if (nchar(subset) > 30)
+            subt <- call("paste", subset, subt, sep="\n")
+        else subt <- call("paste", subset, subt, sep=", ")
+    }
+    subt
+}
 
 ## code below copied from lattice
 

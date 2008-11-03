@@ -62,6 +62,8 @@ latticist(dat,
   \pkg{gWidgets} package. This requires one of the "toolkit
   implementations" to installed:
   \pkg{gWidgetstcltk}, \pkg{gWidgetsRGtk2} or \pkg{gWidgetsrJava}.
+  This last one \emph{only} works from within the \pkg{JGR}
+  environment (and is currently untested).
 
   The fastest way to start, without any external system requirements, is
   to \code{install.packages("gWidgetstcltk")}. However, that does not

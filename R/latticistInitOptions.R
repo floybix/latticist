@@ -3,21 +3,29 @@
 ## Copyright (c) 2008 Felix Andrews <felix@nfrac.org>
 ## GPL version 2 or newer
 
+symbolName <- function(nm)
+{
+    unlist(lapply(nm, function(z)
+                  deparse(as.symbol(z), backtick = TRUE)),
+                  use.names = FALSE)
+}
+
 latticistInitOptions <- function(dat, datArg)
 {
     stuff <- list()
-    datNm <- toString(deparse(datArg))
+    datNm <- toString(deparse(datArg, backtick = TRUE))
 
     if (is.table(dat)) {
         ## dat is a table
         stuff$varexprs <-
-            c("", names(dimnames(dat)))
+            c("", symbolName(names(dimnames(dat))))
 
         ## subsets
         ## preload factor levels (only most frequent two of each)
         dimn <- dimnames(dat)
         toplev <- lapply(names(dimn), function(nm) {
-            paste(nm, "==", head(dimn[[nm]], 2))
+            tmp <- head(dimn[[nm]], 2)
+            paste(symbolName(nm), "==", sapply(tmp, deparse))
         })
         stuff$subsetopts <-
             c("", unlist(toplev))
@@ -32,31 +40,31 @@ latticistInitOptions <- function(dat, datArg)
         ## group into categorical vs numeric
         stuff$varexprs <-
             c("",
-              names(dat)[iscat],
+              symbolName(names(dat)[iscat]),
               if (any(iscat) && any(!iscat))
               "------------------",
-              names(dat)[!iscat],
+              symbolName(names(dat)[!iscat]),
               "-------------------",
               sprintf("1:nrow(%s)", datNm))
 
         ## subsets
         ## preload factor levels (only first two of each)
         toplev <- lapply(names(dat)[iscat], function(nm) {
+            nmOK <- symbolName(nm)
             if (is.factor(dat[[nm]])) {
                 tmp <- head(levels(dat[[nm]]), 2)
-                paste(nm, "==", sapply(tmp, deparse))
+                paste(nmOK, "==", sapply(tmp, deparse))
             } else if (is.logical(dat[[nm]])) {
-                paste(nm, "==", c("TRUE", "FALSE"))
+                paste(nmOK, "==", c("TRUE", "FALSE"))
             } else {
                 tmp <- names(sort(table(dat[[nm]]), decreasing=TRUE))
-                #tmp <- tmp[seq_len(min(2, length(tmp)))] ## top 2
                 tmp <- head(tmp, 2)
-                paste(nm, "==", sapply(tmp, deparse))
+                paste(nmOK, "==", sapply(tmp, deparse))
             }
         })
         subsetopts <- c("", unlist(toplev),
                         "------------------")
-        if (nrow(dat) >= LOTS) {
+        if (nrow(dat) > 1000) {
             ## a regular sample down by one order of magnitude
             subN <- 10 ^ (round(log10(nrow(dat))) - 1)
             subsetopts <-
@@ -67,8 +75,9 @@ latticistInitOptions <- function(dat, datArg)
         }
         ## is.finite() of variables with missing values
         missings <- lapply(names(dat), function(nm) {
+            nmOK <- symbolName(nm)
             if (any(is.na(dat[[nm]])))
-                paste("!is.na(", nm, ")", sep="")
+                paste("!is.na(", nmOK, ")", sep="")
             else NULL
         })
         missings <- unlist(missings)

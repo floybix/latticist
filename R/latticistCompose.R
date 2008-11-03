@@ -3,11 +3,6 @@
 ## Copyright (c) 2008 Felix Andrews <felix@nfrac.org>
 ## GPL version 2 or newer
 
-LOTS <- 1000
-HEAPS <- 8000
-MAXPANELS <- 16
-INIT.NLEVELS <- 4
-
 latticistCompose <-
     function(dat, spec = list(),
              datArg = substitute(dat),
@@ -24,7 +19,7 @@ latticistCompose <-
                  doLines = TRUE, doSeparateStrata = TRUE,
                  doHexbin = FALSE, doTile = FALSE,
                  doSegments = FALSE, doAsError = FALSE,
-                 defaultPlot = "marginal.plot")
+                 defaultPlot = latticist.getOption("defaultPlot"))
         {
             ## keep original variable expressions for titles etc
             xvarStr <- xvar
@@ -43,40 +38,22 @@ latticistCompose <-
             cond <- if (!is.null(cond)) parse(text = cond)[[1]]
             cond2 <- if (!is.null(cond2)) parse(text = cond2)[[1]]
             subset <- if (!is.null(subset)) parse(text = subset)[[1]]
-            #if (inherits(e, "try-error")) {
-            #    msg <- paste("Error parsing variables: ",
-            #                 conditionMessage(e))
-            #    gmessage(msg, title = "Error", icon = "error")
-            #    stop(result)
-            #}
 
-            #xvar <- substitute(xvar)
-            #yvar <- substitute(yvar)
-            #zvar <- substitute(zvar)
-            #groups <- substitute(groups)
-            #cond <- substitute(cond)
-            #cond2 <- substitute(cond2)
-            #subset <- substitute(subset)
             if (is.null(subset)) subset <- TRUE
-            if (is.null(nLevels)) nLevels <- INIT.NLEVELS
+            if (is.null(nLevels))
+                nLevels <- latticist.getOption("disc.levels")
 
             deparse1 <- function(expr)
-                paste(deparse(expr, width = 500, control = NULL),
+                paste(deparse(expr, width = 500, control = NULL,
+                              backtick = TRUE),
                       collapse = " ")
-
-            ## keep raw variable expressions for titles etc
-            #xvarStr <- deparse1(xvar)
-            #yvarStr <- deparse1(yvar)
-            #zvarStr <- deparse1(zvar)
-            #groupsStr <- deparse1(groups)
-            #condStr <- deparse1(cond)
-            #cond2Str <- deparse1(cond2)
 
             ## work out data types
             xIsCat <- yIsCat <- zIsCat <-
                 groupsIsCat <- condIsCat <- cond2IsCat <- NA
             xVal <- yVal <- zVal <-
                 groupsVal <- condVal <- cond2Val <- NULL
+            groupsIsNum <- FALSE
             nPoints <- 0
             anyNumerics <- NA
 
@@ -105,6 +82,7 @@ latticistCompose <-
                 yIsCat <- is.categorical(yVal)
                 zIsCat <- is.categorical(zVal)
                 groupsIsCat <- is.categorical(groupsVal)
+                groupsIsNum <- is.numeric(groupsVal)
                 condIsCat <- is.categorical(condVal)
                 cond2IsCat <- is.categorical(cond2Val)
                 ## calculate number of data points
@@ -136,7 +114,6 @@ latticistCompose <-
                 ## discretize
                 doXDisc <- doXDisc && (!is.null(xvar) && !xIsCat)
                 doYDisc <- doYDisc && (!is.null(yvar) && !yIsCat)
-                doGroupsDisc <- (!is.null(groups) && !groupsIsCat)
                 doCondDisc <- (!is.null(cond) && !condIsCat)
                 doCond2Disc <- (!is.null(cond2) && !cond2IsCat)
 
@@ -166,18 +143,15 @@ latticistCompose <-
                     if (doCondDisc) cond <- call("cutEq", cond, nLevels)
                     if (doCond2Disc) cond2 <- call("cutEq", cond2, nLevels)
                 }
-                if (doGroupsDisc) groups <- call("cutEq", groups, nLevels)
                 ## re-evaluate data if changed
                 if (doXDisc) xVal <- eval(xvar, dat, enclos)
                 if (doYDisc) yVal <- eval(yvar, dat, enclos)
                 if (doCondDisc) condVal <- eval(cond, dat, enclos)
                 if (doCond2Disc) cond2Val <- eval(cond2, dat, enclos)
-                if (doGroupsDisc) groupsVal <- eval(groups, dat, enclos) ## TODO avoid this?
                 xIsCat <- is.categorical(xVal)
                 yIsCat <- is.categorical(yVal)
-                zIsCat <- is.categorical(zVal)
-                groupsIsCat <- is.categorical(groupsVal)
             }
+            groupsWasCat <- groupsIsCat
 
             ## if only one conditioning term, call it cond
             if (is.null(cond) && !is.null(cond2)) {
@@ -199,6 +173,7 @@ latticistCompose <-
             conds <- cond
             if (!is.null(cond2)) conds <- call("*", cond, cond2)
             nCondLevels <- 1
+            MAXPANELS <- latticist.getOption("max.panels")
             tooManyPanels <- FALSE
             if (!is.null(conds)) {
                 nCondLevels <- nlevels(condVal)
@@ -212,7 +187,7 @@ latticistCompose <-
             call <- NULL
             call <- quote(xyplot(0 ~ 0))
             call$data <- datArg
-            call$groups <- groups ## may be NULL
+            call$groups <- if (groupsIsCat) groups
             call$subset <-
                 if (!isTRUE(subset)) subset else NULL
             ## build up 'scales' list and assign at the end
@@ -261,6 +236,9 @@ latticistCompose <-
             if (!is.null(yvar) && !yIsCat)
                 call$ylab <- yvarStr
 
+            LOTS <- latticist.getOption("LOTS")
+            HEAPS <- latticist.getOption("HEAPS")
+
             ## choose plot type and formula
             if (is.null(xvar) && is.null(yvar)) {
                 ## HYPERVARIATE
@@ -275,15 +253,30 @@ latticistCompose <-
                 if (defaultPlot == "marginal.plot") {
                     call[[1]] <- quote(marginal.plot)
                     call[[2]] <- dat.expr
-                    call$reorder <- FALSE
+                    ## discretise groups if necessary
+                    if (groupsIsNum) {
+                        groups <- call("cutEq", groups, nLevels)
+                        groupsVal <- eval(groups, dat, enclos)
+                        groupsIsCat <- TRUE
+                        call$groups <- groups
+                    }
+                    ## these seems to get into *all* generated calls! (???)
+#                    call$reorder <- FALSE
+#                    if (doLines) {
+#                        if (!is.null(groups))
+#                            call$type <- c("p", "l")
+#                        else
+#                            call$type <- c("p", "h")
+#                    } else {
+#                        call$type <- "p"
+#                    }
 
                 } else if (defaultPlot == "splom") {
                     if (is.table(dat)) {
                         call[[1]] <- quote(pairs)
                         call[[2]] <- dat.expr
                         call$diag_panel <-
-                            quote(pairs_diagonal_text(distribute = "margin",
-                                                      rot = 45))
+                            quote(pairs_diagonal_text(distribute = "margin"))
                         #call$highlighting <- 2
                         #call$diag_panel_args <-
                         #    list(fill = grey.colors)
@@ -292,27 +285,97 @@ latticistCompose <-
                         #call$labeling <- quote(labeling_values)
                         call$labeling_args <-
                             list(rep = FALSE)
+                        call$groups <- NULL
 
                     } else {
+                        ## data.frame
                         call[[1]] <- quote(splom)
                         call[[2]] <- dat.form
+                        ## discretise groups if necessary
+                        if (groupsIsNum) {
+                            groups <- call("cutEq", groups, nLevels)
+                            groupsVal <- eval(groups, dat, enclos)
+                            groupsIsCat <- TRUE
+                            call$groups <- groups
+                        }
                         call$varname.cex <- 0.7
                         call$pscales <- 0
+                        xyType <- latticist.getOption("xyLineType")
                         if (doLines)
-                            call$lower.panel <-
-                                function(..., type)
-                                    try(panel.xyplot(..., type = "smooth"))
+                            call$panel <-
+                                bquote(
+                                       function(..., type) {
+                                           try(panel.xyplot(...,
+                                                            type = c("p",
+                                                            .( xyType ))))
+                                       })
+                        call$lower.panel <-
+                            function(...) { NULL }
                     }
 
                 } else if (defaultPlot == "parallel") {
-                    call[[1]] <- quote(parallel)
-                    call[[2]] <- dat.form
-                    if (is.null(groups))
-                        call$col <- quote(trellis.par.get("plot.line")$col)
+                    if (is.table(dat)) {
+                        ## "parallel" actually means a table view here
+                        call[[1]] <- quote(barchart)
+                        call[[2]] <- datArg
+                        call$data <- NULL
+                        call$groups <- FALSE
+                        if (is.null(x.relation))
+                            x.relation <- "free"
+                        call$strip <-
+                            quote(strip.custom(strip.names = TRUE))
+                        call$as.table <- TRUE
+                        if (!is.null(groups)) {
+                            i <- match(deparse1(groups),
+                                       names(dimnames(dat)))
+                            if (!is.na(i)) {
+                                ii <- c(seq_along(dim(dat))[-i], i)
+                                call[[2]] <- call("aperm", datArg, ii)
+                                call$groups <- TRUE
+                                call$stack <- TRUE
+                            }
+                        }
+                        call$subscripts <- TRUE
+#                        call[[2]] <-
+#                            substitute(~ as.data.frame(datArg)[i],
+#                                       list(datArg = datArg,
+#                                            i = -(1+length(dim(dat))) ))
+#                        call$data <- NULL
+#                        if (!is.null(groups)) {
+#                            call$alpha <-
+#                                substitute(datArg / max(datArg),
+#                                           list(datArg = datArg))
+#                            call$data <-
+#                                call("as.data.frame", datArg)
+#                        }
+                    } else {
+                        ## data.frame
+                        call[[1]] <- quote(parallel)
+                        call[[2]] <- dat.form
+                        if (is.null(groups)) {
+                            call$col <- quote(trellis.par.get("plot.line")$col)
+                        }
+                        if (groupsIsNum) {
+                            call$col <-
+                                call("n.level.colors",
+                                     call("with", datArg, groups))
+                            call$legend <-
+                                call("simpleColorKey",
+                                     call("with", datArg, groups))
+                        }
+                    }
                 }
 
             } else if (is.null(xvar) || is.null(yvar)) {
                 ## UNIVARIATE
+
+                ## discretise groups if necessary
+                if (groupsIsNum) {
+                    groups <- call("cutEq", groups, nLevels)
+                    groupsVal <- eval(groups, dat, enclos)
+                    groupsIsCat <- TRUE
+                    call$groups <- groups
+                }
 
                 if (xIsCat || yIsCat) {
                     ## UNIVARIATE CATEGORICAL
@@ -359,16 +422,16 @@ latticistCompose <-
                             call[[1]] <- quote(barchart)
                             call$data <- NULL
                             call$subset <- NULL
-                            xterms <- paste(c(deparse1(xvar),
-                                              if (!is.null(cond)) deparse1(cond),
-                                              if (!is.null(cond2)) deparse1(cond2),
-                                              if (!is.null(groups)) deparse1(groups)),
-                                            collapse=" + ")
-                            xform <- as.formula(paste("~", xterms))
+                            form <- paste(c(deparse1(xvar),
+                                            if (!is.null(cond)) deparse1(cond),
+                                            if (!is.null(cond2)) deparse1(cond2),
+                                            if (!is.null(groups)) deparse1(groups)),
+                                          collapse=" + ")
+                            form <- paste("~", form)
                             if (is.table(dat))
                                 form <- paste("Freq", form)
                             tabcall <-
-                                call("xtabs", xform, datArg)
+                                call("xtabs", as.formula(form), datArg)
                             tabcall$subset <- if (!isTRUE(subset)) subset
                             call[[2]] <- tabcall
                             ## and set logical `groups` argument
@@ -455,15 +518,15 @@ latticistCompose <-
                 } else {
                     call[[1]] <- quote(mosaic)
                 }
-                xterms <- paste(c(deparse1(yvar),
-                                  deparse1(xvar),
-                                  if (!is.null(zvar)) deparse1(zvar),
-                                  if (!is.null(groups)) deparse1(groups)),
-                                collapse=" + ")
+                form <- paste(c(deparse1(yvar),
+                                deparse1(xvar),
+                                if (!is.null(zvar)) deparse1(zvar),
+                                if (!is.null(groups)) deparse1(groups)),
+                              collapse=" + ")
                 if (!is.null(conds))
-                    xterms <- paste(xterms, "|", deparse1(conds))
-                xform <- as.formula(paste("~", xterms))
-                call[[2]] <- xform
+                    form <- paste(form, "|", deparse1(conds))
+                form <- paste("~", form)
+                call[[2]] <- as.formula(form)
                 if (!is.null(groups)) {
                     call$groups <- NULL
                     call$highlighting <- deparse1(groups)
@@ -505,6 +568,14 @@ latticistCompose <-
                     else
                         call[[2]] <- call("~", yvar, xvar)
 
+                    ## discretise groups if necessary
+                    if (groupsIsNum) {
+                        groups <- call("cutEq", groups, nLevels)
+                        groupsVal <- eval(groups, dat, enclos)
+                        groupsIsCat <- TRUE
+                        call$groups <- groups
+                    }
+
                     if (!is.null(groups)) {
                         call[[1]] <- quote(stripplot)
                         call$jitter.data <- TRUE
@@ -512,7 +583,7 @@ latticistCompose <-
                             call$type <- c("p", "a")
                             ## TODO: check whether there are any missing values
                                         #call$fun <- quote(median)
-                            call$fun <- quote(function(x) median(x, na.rm=TRUE))
+                            call$fun <- quote(function(x) { median(x, na.rm=TRUE) })
                         }
 
                     } else {
@@ -541,7 +612,7 @@ latticistCompose <-
 
                     } else {
 
-                        if (is.numeric(groupsVal) || doGroupsDisc) {
+                        if (groupsIsNum) {
                             if (doTile) {
                                 call[[1]] <- quote(tileplot)
                                 if (require("tripack", quietly = TRUE))
@@ -551,13 +622,10 @@ latticistCompose <-
                                 call$panel <- quote(panel.levelplot.points)
                                 call$prepanel <- quote(prepanel.default.xyplot)
                             }
-                            ## un-discretize groups
-                            if (doGroupsDisc) groups <- groups[[2]]
                             form <- call("~", groups, call("*", xvar, yvar))
                             if (!is.null(conds))
                                 form[[3]] <- call("|", form[[3]], conds)
                             call[[2]] <- form
-                            call$groups <- NULL
                         }
 
                         if (doLines) {
@@ -637,7 +705,7 @@ latticistCompose <-
 
                             if (any(panelType$lines == FALSE)) {
                                 ## use loess smoother
-                                call$type <- c("p", "smooth")
+                                call$type <- c("p", latticist.getOption("xyLineType"))
                                 call$prepanel <- quote(try.prepanel.loess)
                                 ## do not worry about errors in loess.smooth
                                 call$plot.args <- quote(list(panel.error = "warning"))
@@ -676,7 +744,6 @@ latticistCompose <-
                         form[[3]] <- call("|", form[[3]], conds)
                     call[[2]] <- form
                     ## colors coded by "level"
-                    if (doGroupsDisc) groups <- groups[[2]]
                     call$level <- groups
                     call$groups <- NULL
 
@@ -692,8 +759,15 @@ latticistCompose <-
                     call[[2]] <- form
                     if (doLines)
                         call$type <- c("p", "h")
-                    ## TODO: support color covariate
-
+                    ## support color covariate
+                    if (groupsIsNum) {
+                        call$col <-
+                            call("n.level.colors",
+                                 call("with", datArg, groups))
+                        call$legend <-
+                            call("simpleColorKey",
+                                 call("with", datArg, groups))
+                    }
                 }
             }
 
@@ -731,8 +805,6 @@ latticistCompose <-
             ## style settings for points
             if (anyNumerics) {
                 theme <- call("simpleTheme")
-                #if (!is.null(groups) && groupsIsCat)
-                #   theme$cex <- 0.8
                 if (nCondLevels > 2)
                     theme$cex <- 0.6
                 if (nCondLevels > 6)
@@ -741,10 +813,10 @@ latticistCompose <-
                     theme$cex <- 0.5
                 if ((nPoints >= LOTS) && is.null(call$f.value))
                 {
-                    theme$alpha.points <- if (nPoints >= HEAPS) 0.15 else 0.3
-                    ## bug in lattice: grouped lines take alpha from points setting
-                    if (!is.null(groups) &&
-                        (packageDescription("lattice")$Version <= "0.17-12")) ##fixed yet?
+                    theme$alpha.points <- if (nPoints >= HEAPS) 0.2 else 0.3
+                    ## note bug in lattice: grouped lines take alpha from points setting
+                    ## also: if conditioning, individual panels might not have many points
+                    if (!is.null(groups) || !is.null(cond))
                         theme$alpha.points <- if (nPoints >= HEAPS) 0.4 else 0.6
                 }
                 if (nPoints >= HEAPS) {
@@ -786,8 +858,8 @@ latticistCompose <-
                 }
                 ## get group levels that will appear in key
                 levs <- levelsOK(groupsVal)
-                ## if groups are discretised, or hypervar, need a title
-                if (doGroupsDisc || (is.null(xvar) && is.null(yvar))) {
+                ## if groups are discretised, or hypervar, need key title
+                if (groupsWasCat || (is.null(xvar) && is.null(yvar))) {
                     auto.key$title <- groupsStr
                     auto.key$cex.title <- 1
                 }
@@ -821,28 +893,23 @@ latticistCompose <-
             }
 
             ## sub-title
-            Rvers <- paste("R ", R.version$major, ".",
-                           R.version$minor, R.version$status, sep="")
-            subt <- if (nPoints > 0)
-                paste("N = ", nPoints, ", ", sep="") else ""
-            subt <- paste(subt, toString(Sys.Date()), ", ",
-                          Rvers, sep="")
-            if (!isTRUE(subset)) {
-                if (nchar(subsetStr) > 30)
-                    subt <- call("paste", subsetStr, subt, sep="\n")
-                else subt <- call("paste", subsetStr, subt, sep=", ")
-            }
-            if (isVCD) {
-                if (!is.call.to(call, "cotabplot"))
-                    call$sub <- subt
-            } else {
-                call$sub <- list(subt, x=0.99, just="right",
-                                 cex=0.7, font=1)
+            sub.fn <- latticist.getOption("sub.fn")
+            if (!is.null(sub.fn)) {
+                subt <- sub.fn
+                if (is.function(sub.fn))
+                    subt <- sub.fn(spec = spec, nPoints = nPoints)
+                if (isVCD) {
+                    if (!is.call.to(call, "cotabplot"))
+                        call$sub <- subt
+                } else {
+                    call$sub <- list(subt, x=0.99, just="right",
+                                     cex=0.7, font=1)
+                }
             }
 
             if (!isVCD) {
-                ## TODO: if (...)
-                call$subscripts <- TRUE
+                if (!is.null(conds))
+                    call$subscripts <- TRUE
 
                 ## convert nested list 'scales' to quoted argument
                 if (length(scales) > 0) {
@@ -917,7 +984,7 @@ simpleColorKey <-
 {
     foo <- list(space =
                 list(fun = "draw.colorkey",
-                     args = list(at = at, ...)))
+                     args = list(list(at = at, ...))))
     names(foo) <- space
     foo
 }

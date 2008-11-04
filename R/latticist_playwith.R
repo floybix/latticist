@@ -15,6 +15,11 @@ latticist_playwith <-
              plot.call)
 {
     stopifnot(require("playwith"))
+    ## I really do not want to do this
+    ## (since RGtk2 exports 7000+ symbols and
+    ##  is irrelevant to the user);
+    ## but it is necessary to pass R CMD check
+    require(RGtk2)
 
     title <- paste("Latticist:", datName)
 

@@ -62,17 +62,19 @@ latticistInitOptions <- function(dat, datArg)
                 paste(nmOK, "==", sapply(tmp, deparse))
             }
         })
-        subsetopts <- c("", unlist(toplev),
-                        "------------------")
+        subsetopts <- c("", unlist(toplev))
         if (nrow(dat) > 1000) {
             ## a regular sample down by one order of magnitude
             subN <- 10 ^ (round(log10(nrow(dat))) - 1)
             subsetopts <-
                 c(subsetopts,
+                  "## regular subsample:",
                   sprintf("seq(1, nrow(%s), length = %i)",
-                          datNm, subN),
-                  "-----------------")
+                          datNm, subN))
         }
+        subsetopts <-
+                c(subsetopts,
+                  "------------------")
         ## is.finite() of variables with missing values
         missings <- lapply(names(dat), function(nm) {
             nmOK <- symbolName(nm)
@@ -83,9 +85,9 @@ latticistInitOptions <- function(dat, datArg)
         missings <- unlist(missings)
         if (length(missings) > 0) {
             subsetopts <- c(subsetopts,
-                            sprintf("complete.cases(%s)", datNm))
+                            sprintf("complete.cases(%s)", datNm),
+                            missings)
         }
-        subsetopts <- c(subsetopts, missings)
         stuff$subsetopts <- subsetopts
     }
 

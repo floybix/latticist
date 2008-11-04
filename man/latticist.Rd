@@ -37,7 +37,7 @@ latticist(dat,
     interface, these are passed to \code{\link[playwith]{playwith}}. For
     the \code{gWidgets} interface, these are:
     \describe{
-      \item{\code{width = 480, height = 480}}{
+      \item{\code{width = 450, height = 450}}{
 	size of the graphics device in pixels.
       }
       \item{\code{pointsize = 12}}{

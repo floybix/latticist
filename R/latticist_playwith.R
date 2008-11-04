@@ -15,14 +15,11 @@ latticist_playwith <-
              plot.call)
 {
     stopifnot(require("playwith"))
-#    stopifnot(require("RGtk2"))
 
     title <- paste("Latticist:", datName)
 
-    ## TODO: disallow this?
-    if (missing(plot.call))
-        plot.call <-
-            latticistCompose(dat, spec = spec, datArg = datArg)
+    plot.call <-
+        latticistCompose(dat, spec = spec, datArg = datArg)
 
     ## this is the constructor (an init.action)
     lattAction <- latticistToolConstructor(dat, datArg = datArg)
@@ -428,7 +425,7 @@ latticistToolConstructor <- function(dat, datArg)
                        })
         yvarBox$packStart(yvarW)
         ## discretize -- for numerics
-        ydiscW <- gtkCheckButton("discretize")
+        ydiscW <- gtkCheckButton("discr.")
         gSignalConnect(ydiscW, "clicked",
                        function(widget, ...) {
                            playState$latticist$spec$doYDisc <-
@@ -463,7 +460,7 @@ latticistToolConstructor <- function(dat, datArg)
                        })
         xvarBox$packStart(xvarW)
         ## "discretize" -- for numerics
-        xdiscW <- gtkCheckButton("discretize")
+        xdiscW <- gtkCheckButton("discr.")
         gSignalConnect(xdiscW, "clicked",
                        function(widget, ...) {
                            playState$latticist$spec$doXDisc <-
@@ -540,6 +537,16 @@ latticistToolConstructor <- function(dat, datArg)
                            reCompose(playState, newPlot = TRUE)
                        })
         groupsBox$packStart(explodeW)
+        ## "squash" button
+        squashW <- niceButton("squash")
+        gSignalConnect(squashW, "button-press-event",
+                       function(...) {
+                           zvar <- playState$latticist$spec$zvar
+                           playState$latticist$spec$groups <- zvar
+                           playState$latticist$spec$zvar <- NULL
+                           reCompose(playState, newPlot = TRUE)
+                       })
+        groupsBox$packStart(squashW)
         ## "go 3D" button
         go3DW <- niceButton("go 3D")
         gSignalConnect(go3DW, "button-press-event",
@@ -592,16 +599,6 @@ latticistToolConstructor <- function(dat, datArg)
         orLabelW <- gtkLabel(" or")
         zBox$packStart(orLabelW)
         zBox$packStart(segmentsW, expand=FALSE)
-        ## "squash" button
-        squashW <- niceButton("squash")
-        gSignalConnect(squashW, "button-press-event",
-                       function(...) {
-                           zvar <- playState$latticist$spec$zvar
-                           playState$latticist$spec$groups <- zvar
-                           playState$latticist$spec$zvar <- NULL
-                           reCompose(playState, newPlot = TRUE)
-                       })
-        zBox$packStart(squashW)
         gzBox$packStart(zBox, expand=FALSE, padding=1)
         ## z (3D depth)
         zvarBox <- gtkHBox()
@@ -620,8 +617,8 @@ latticistToolConstructor <- function(dat, datArg)
                            reCompose(playState, newPlot = TRUE)
                        })
         zvarBox$packStart(zvarW)
-        ## asError option
-        aserrorW <- gtkCheckButton("as error") # (x+/-z)")
+        ## doAsError option
+        aserrorW <- gtkCheckButton("(x +/- z)") #"as error")
         gSignalConnect(aserrorW, "clicked",
                        function(widget, ...) {
                            playState$latticist$spec$doAsError <-

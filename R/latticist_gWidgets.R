@@ -9,8 +9,9 @@ latticist_gWidgets <-
              datArg = substitute(dat),
              datName = "dat",
              ...,
-             width = 480,
-             height = 480,
+             width = 6 * dpi,
+             height = 6 * dpi,
+             dpi = 75,
              pointsize = 12)
 {
     title <- paste("Latticist:", datName)
@@ -43,36 +44,87 @@ latticist_gWidgets <-
     hgroup <- ggroupThin(horizontal = TRUE, container = metagroup, expand = TRUE)
     vgroup <- ggroupThin(horizontal = FALSE, container = hgroup, expand = FALSE)
     ## add the graphics device
-    gg <- ggraphics(width = width, height = height, ps = pointsize,
-                    container = hgroup, expand = TRUE)
-    trellis.device(new = FALSE, retain = TRUE) ## i.e. new device if needed
+    if (!inherits(guiToolkit(), "guiWidgetsToolkittcltk")) {
+        gg <- ggraphics(width = width, height = height, ps = pointsize,
+                        container = hgroup, expand = TRUE)
+    }
+    trellis.device(new = FALSE, retain = TRUE, ## i.e. new device if needed
+                   width = round(width / dpi), height = round(height / dpi),
+                   pointsize = pointsize)
+
     ## persistent variables
     targetDev <- dev.cur()
     plot.call <- quote(plot())
+    result <- NULL
+    currentPage <- 1
 
-    reCompose <- function() {
-        dev.set(targetDev)
+    withErrorHandling <- function(expr)
+    {
+        expr <- substitute(expr)
         if (isTRUE(latticist.getOption("catch.errors"))) {
-            tmp <- tryCatch(latticistCompose(dat, lattState$spec,
-                                             datArg = datArg),
-                            error = force)
+            tmp <- tryCatch(eval.parent(expr), error = force)
             if (inherits(tmp, "error")) {
                 gmessage(conditionMessage(tmp),
                          title = "Error", icon = "error")
                 stop(tmp)
             }
-            plot.call <<- tmp
         } else {
-            plot.call <<-
-                latticistCompose(dat, lattState$spec,
-                                 datArg = datArg)
+            ## eval without try() -- allows traceback etc
+            eval.parent(expr)
         }
+    }
+
+    reDraw <- function() {
+        withErrorHandling(doReDraw())
+    }
+    doReDraw <- function() {
+        dev.set(targetDev)
+        plot.call <- parse(text = svalue(wid.call))[[1]]
+        result <<- eval(plot.call)
+        pages <- 1
+        if (inherits(result, "trellis"))
+            pages <- npages(result)
+        try(enabled(wid.page) <- ((pages > 1) || (currentPage > 1)),
+            silent = TRUE)
+        #if (currentPage > pages)
+        #    currentPage <<- 1
+        #svalue(wid.page) <- currentPage
+        if (inherits(result, "trellis"))
+            plotOnePage(result, currentPage)
+    }
+
+    reCompose <- function() {
+        withErrorHandling(doReCompose())
+#        if (isTRUE(latticist.getOption("catch.errors"))) {
+#            tmp <- tryCatch(doReCompose(), error = force)
+#            if (inherits(tmp, "error")) {
+#                gmessage(conditionMessage(tmp),
+#                         title = "Error", icon = "error")
+#                stop(tmp)
+#            }
+#        } else {
+#            doReCompose()
+#        }
+    }
+
+    doReCompose <- function() {
+        dev.set(targetDev)
+        plot.call <<-
+            latticistCompose(dat, lattState$spec,
+                             datArg = datArg)
         callTxt <- deparseOneLine(plot.call, control = NULL)
         ## check whether anything changed
         if (identical(callTxt, svalue(wid.call)))
             return()
+#        svalue(wid.call) <- ""
+#        add(wid.call, callTxt,
+#            font.attr = c(family = "monospace", sizes = "small"),
+#            do.newline = FALSE)
         svalue(wid.call) <- callTxt
-        eval(call("print", plot.call))
+        result <<- eval(plot.call)
+        currentPage <<- 1
+        if (inherits(result, "trellis"))
+            plotOnePage(result, currentPage)
         updateFromSpec()
     }
 
@@ -100,6 +152,8 @@ latticist_gWidgets <-
             !identical(spec$doLines, FALSE)
         svalue(wid.separate.strata) <-
             !identical(spec$doSeparateStrata, FALSE)
+        svalue(wid.segments) <- isTRUE(spec$doSegments)
+        svalue(wid.as.error) <- isTRUE(spec$doAsError)
         ## set which widgets are sensitive
         enabled(wid.flip) <-
             (!is.null(spec$xvar) || !is.null(spec$yvar))
@@ -114,17 +168,30 @@ latticist_gWidgets <-
              !is.null(spec$xvar) &&
              !is.null(spec$yvar) &&
              is.null(spec$zvar))
+        enabled(wid.segments) <-
+            (!is.null(spec$xvar) &&
+             !is.null(spec$yvar))
+        enabled(wid.as.error) <- isTRUE(spec$doSegments)
+        ## scales
         isVCD <- (is.call.to(plot.call, "mosaic") ||
                   is.call.to(plot.call, "cotabplot") ||
                   is.call.to(plot.call, "pairs"))
         hasPanels <- if (!isVCD)
-            (prod(dim(trellis.last.object())) > 1)
+            (prod(dim(result)) > 1)
         enabled(wid.scales) <- !isVCD && hasPanels
         enabled(wid.separate.strata) <- isVCD
+        ## can identify points?
         enabled(wid.identify) <-
             (!is.table(dat) && !isVCD &&
              !is.call.to(plot.call, "marginal.plot") &&
              !is.call.to(plot.call, "parallel"))
+        ## current page
+        svalue(wid.page) <- currentPage
+        pages <- 1
+        if (inherits(result, "trellis"))
+            pages <- npages(result)
+        try(enabled(wid.page) <- (pages > 1),
+            silent = TRUE)
     }
 
     setSpec <- function(h, ...) {
@@ -140,8 +207,15 @@ latticist_gWidgets <-
     tmpg <- ggroupThin(container = vgroup)
     gimage(system.file("etc", "latticist_title.gif", package="latticist"),
            container = tmpg)
-    glabel(paste(" v.", packageDescription("playwith")$Version),
+    glabel(paste(" v.", packageDescription("playwith")$Version, " "),
            container = tmpg)
+    ## "reset" button
+    wid.reset <-
+        gbutton(" reset ", container = tmpg,
+                handler = function(...) {
+                    lattState$spec <<- list()
+                    reCompose()
+                })
 
     ## HYPERVARIATE
     hyperg <- gframe("Hypervariate", horizontal = FALSE, expand = FALSE, container = vgroup)
@@ -186,13 +260,15 @@ latticist_gWidgets <-
     aspectopts <- lattState$aspectopts
     wid.aspect <-
         gdroplist(aspectopts, selected = 0, container = tmpg,
-                  editable = TRUE, width = 70,
+                  editable = TRUE, width = 45,
                   coerce.with = function(x) {
                       if (nchar(x) > 0)
-                          parse(text=x)[[1]]
+                          parse(text = x)[[1]]
                   }, handler = setSpec, action = "aspect")
 
     ## TODO: hexbin
+    ## TODO: disc? / levels
+
     tmpg <- ggroupThin(container = xyg)
     glabel("x=", container = tmpg)
     wid.xvar <-
@@ -208,7 +284,14 @@ latticist_gWidgets <-
     wid.zvar <-
         gdroplist(varexprs, container = tmpg, editable = TRUE,
                   handler = setSpec, action = "zvar")
-    ## TODO: disc? / levels
+    tmpg <- ggroupThin(container = xyg)
+    ## "Segments" checkbox
+    wid.segments <-
+        gcheckbox("Segments (x -- z)", container = tmpg,
+                  handler = setSpec, action = "doSegments")
+    wid.as.error <-
+        gcheckbox("(x +/- z)", container = tmpg,
+                  handler = setSpec, action = "doAsError")
 
     ## GROUPS / COLOR
     grpg <- gframe("Groups / Color", horizontal = FALSE, container = vgroup)
@@ -298,7 +381,7 @@ latticist_gWidgets <-
                   handler = setSpec, action = "subset")
 
     ## STYLE
-    styleg <- gframe("Style", horizontal = FALSE, container = vgroup)
+    styleg <- gframe("Style and Theme", horizontal = FALSE, container = vgroup)
     tmpg <- ggroupThin(container = styleg)
     ## "Lines" checkbox
     wid.lines <-
@@ -306,25 +389,46 @@ latticist_gWidgets <-
                   checked = !identical(spec$doLines, FALSE),
                   handler = setSpec, action = "doLines")
     wid.style <-
-        gbutton("Style Settings...", container = tmpg,
+        gbutton("Style...", container = tmpg,
                 handler = function(...) {
                     latticeStyleGUI(target.device = targetDev,
                                     width = width, height = height,
                                     pointsize = pointsize)
                 })
+    ## Theme
+    themeList <-
+        alist("Default" = standard.theme("pdf"),
+              "WhiteBG" = col.whitebg(),
+              "Greyscale" = standard.theme("postscript"),
+              "DarkBG" = standard.theme("X11"),
+              "Brewer 1" = custom.theme(),
+              "Brewer 2" = custom.theme.2(),
+              "Brewer black" = custom.theme.black()
+              )
+    wid.theme <-
+        gdroplist(names(themeList), container = tmpg,
+                  selected = 0, width = 85,
+                  handler = function(h, ...) {
+                      dev.set(targetDev)
+                      expr <- themeList[[ svalue(wid.theme) ]]
+                      if (is.null(expr)) return()
+                      trellis.par.set(eval(expr))
+                      trellis.par.set(grid.pars = list(), strict = TRUE)
+                      trellis.par.set(user.text = NULL)
+                      if (inherits(result, "trellis"))
+                          plotOnePage(result, currentPage)
+                  })
 
     ## CALL
     callg <- gframe("Plot call", horizontal = FALSE, container = vgroup)
     wid.call <-
-        gtext("", width = 160, height = 80, container = callg,
-              font.attr = c(family = "monospace"))
-    tmpg <- ggroupThin(container = callg)
+        gtext("", width = 120, height = 70, container = callg,
+              expand = TRUE)
+    tmpg <- ggroupThin(container = callg, expand = FALSE)
     wid.redraw <-
         gbutton("Redraw", container = tmpg,
                 handler = function(...) {
-                    dev.set(targetDev)
-                    plot.call <- parse(text = svalue(wid.call))[[1]]
-                    eval(call("print", plot.call))
+                    reDraw()
                 })
     wid.identify <-
         gbutton("Identify", container = tmpg,
@@ -347,7 +451,19 @@ latticist_gWidgets <-
                         panel.identify(labels = labels)
                     }
                 })
+    glabel(" Page:", container = tmpg)
+    wid.page <-
+        gspinbutton(from = 1, to = 99, container = tmpg,
+                    expand = FALSE,
+                    handler = function(h, ...) {
+#                        dev.set(targetDev)
+                        currentPage <<- svalue(wid.page)
+                        reDraw()
+#                        if (inherits(result, "trellis"))
+#                            plotOnePage(result, currentPage)
+                    })
 
+    #defaulWidget(wid.identify) <- TRUE
     reCompose()
 
     return(invisible(win))
@@ -371,3 +487,41 @@ deparseOneLine <-
     tmp <- gsub(",;", ",", tmp)
     tmp
 }
+
+npages <- function(x)
+{
+    stopifnot(inherits(x, "trellis"))
+    ## work out number of pages that would be plotted
+    ## to display trellis object 'x'
+    nPackets <- prod(dim(x))
+    ## by default, first two dimensions
+    ## (conditioning variables) shown on each page
+    nPanels <- prod(head(dim(x), 2))
+    ## but if an explicit 'layout' is given...
+    if (!is.null(x$layout)) {
+        nPanels <- x$layout[1] * x$layout[2]
+        if (x$layout[1] == 0) nPanels <- x$layout[2]
+    }
+    ## TODO: what about 'skip'?
+    nPages <- ceiling(nPackets / nPanels)
+    nPages
+}
+
+plotOnePage <- function(x, page, ...)
+{
+    stopifnot(inherits(x, "trellis"))
+    n <- page
+    if (is.null(x$layout)) {
+        if (length(dim(x)) > 2)
+            x$layout <- dim(x)[1:2]
+    }
+    if (!is.null(x$layout))
+        x$layout[3] <- 1
+    ## based on code by Deepayan Sarkar
+    packet.panel.pageN <- function(..., page)
+        packet.panel.default(..., page = page + n - 1)
+    plot(x, packet.panel = packet.panel.pageN, ...)
+}
+
+drawPageNum <- function(n)
+    panel.text(1, 1, paste("Page", n), adj = c(1, 1))

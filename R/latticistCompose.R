@@ -301,16 +301,24 @@ latticistCompose <-
                         call$varname.cex <- 0.7
                         call$pscales <- 0
                         xyType <- latticist.getOption("xyLineType")
-                        if (doLines)
-                            call$panel <-
-                                bquote(
-                                       function(..., type) {
-                                           try(panel.xyplot(...,
-                                                            type = c("p",
-                                                            .( xyType ))))
-                                       })
-                        call$lower.panel <-
-                            function(...) { NULL }
+                        if (doLines) {
+                            tmpFun <- function(..., type) NULL
+                            body(tmpFun) <-
+                                bquote({
+                                    try(panel.xyplot(...,
+                                                     type = c("p",
+                                                     .( xyType ))))
+                                })
+                            call$panel <- tmpFun
+#                                bquote(
+#                                       function(..., type) {
+#                                           try(panel.xyplot(...,
+#                                                            type = c("p",
+#                                                            .( xyType ))))
+#                                       })
+                            call$lower.panel <-
+                                function(...) { NULL }
+                        }
                     }
 
                 } else if (defaultPlot == "parallel") {

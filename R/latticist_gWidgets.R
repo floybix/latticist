@@ -44,13 +44,12 @@ latticist_gWidgets <-
     hgroup <- ggroupThin(horizontal = TRUE, container = metagroup, expand = TRUE)
     vgroup <- ggroupThin(horizontal = FALSE, container = hgroup, expand = FALSE)
     ## add the graphics device
-    if (!inherits(guiToolkit(), "guiWidgetsToolkittcltk")) {
-        gg <- ggraphics(width = width, height = height, ps = pointsize,
-                        container = hgroup, expand = TRUE)
+    if (inherits(guiToolkit(), "guiWidgetsToolkitRGtk2")) {
+        ggraphics(width = width, height = height, ps = pointsize,
+                  container = hgroup, expand = TRUE)
     }
-    trellis.device(new = FALSE, retain = TRUE, ## i.e. new device if needed
-                   width = round(width / dpi), height = round(height / dpi),
-                   pointsize = pointsize)
+    trellis.device(new = FALSE, retain = TRUE) ## i.e. new device if needed
+    par(ps = pointsize)
 
     ## persistent variables
     targetDev <- dev.cur()
@@ -95,16 +94,6 @@ latticist_gWidgets <-
 
     reCompose <- function() {
         withErrorHandling(doReCompose())
-#        if (isTRUE(latticist.getOption("catch.errors"))) {
-#            tmp <- tryCatch(doReCompose(), error = force)
-#            if (inherits(tmp, "error")) {
-#                gmessage(conditionMessage(tmp),
-#                         title = "Error", icon = "error")
-#                stop(tmp)
-#            }
-#        } else {
-#            doReCompose()
-#        }
     }
 
     doReCompose <- function() {
@@ -229,6 +218,8 @@ latticist_gWidgets <-
                             lattState$spec$xvar <<- NULL
                             lattState$spec$yvar <<- NULL
                             lattState$spec$zvar <<- NULL
+                            lattState$spec$cond <<- NULL
+                            lattState$spec$cond2 <<- NULL
                             lattState$spec$defaultPlot <<- h$action
                             reCompose()
                         })

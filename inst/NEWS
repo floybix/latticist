@@ -1,4 +1,12 @@
 
+Changes in Version 0.9-41
+
+  o changed graphics device initialisation in the gWidgets
+    version of latticist, so it works now with JavaGD.
+
+  o generalised the method for color-coded points used with
+    cloud and parallel, to handle multiple panels (subscripts).
+
 Changes in Version 0.9-40
 
   o split Latticist out from 'playwith' into a new package.

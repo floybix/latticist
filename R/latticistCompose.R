@@ -300,22 +300,15 @@ latticistCompose <-
                         }
                         call$varname.cex <- 0.7
                         call$pscales <- 0
-                        xyType <- latticist.getOption("xyLineType")
+                        xyType <- c("p", latticist.getOption("xyLineType"))
                         if (doLines) {
                             tmpFun <- function(..., type) NULL
                             body(tmpFun) <-
                                 bquote({
                                     try(panel.xyplot(...,
-                                                     type = c("p",
-                                                     .( xyType ))))
+                                                     type = .( xyType )))
                                 })
                             call$panel <- tmpFun
-#                                bquote(
-#                                       function(..., type) {
-#                                           try(panel.xyplot(...,
-#                                                            type = c("p",
-#                                                            .( xyType ))))
-#                                       })
                             call$lower.panel <-
                                 function(...) { NULL }
                         }
@@ -364,9 +357,15 @@ latticistCompose <-
                             call$col <- quote(trellis.par.get("plot.line")$col)
                         }
                         if (groupsIsNum) {
-                            call$col <-
-                                call("n.level.colors",
-                                     call("with", datArg, groups))
+                            call$groups <-
+                                call("n.level.colors", groups)
+                            call$panel <-
+                                function(..., col, groups, subscripts)
+                                {
+                                    col <- groups[subscripts]
+                                    panel.parallel(..., col = col,
+                                                   subscripts = subscripts)
+                                }
                             call$legend <-
                                 call("simpleColorKey",
                                      call("with", datArg, groups))
@@ -769,9 +768,15 @@ latticistCompose <-
                         call$type <- c("p", "h")
                     ## support color covariate
                     if (groupsIsNum) {
-                        call$col <-
-                            call("n.level.colors",
-                                 call("with", datArg, groups))
+                        call$groups <-
+                            call("n.level.colors", groups)
+                        call$panel <-
+                            function(..., col, pch, groups, subscripts)
+                            {
+                                col <- groups[subscripts]
+                                panel.cloud(..., col = col, pch = 16,
+                                            subscripts = subscripts)
+                            }
                         call$legend <-
                             call("simpleColorKey",
                                  call("with", datArg, groups))
@@ -978,7 +983,7 @@ try.prepanel.loess <- function(...) {
 }
 
 n.level.colors <-
-    function(x, n.col = 30,
+    function(x, n.col = 50,
              at = do.breaks(range(x, finite = TRUE), n.col),
              ...)
 {
@@ -986,13 +991,14 @@ n.level.colors <-
 }
 
 simpleColorKey <-
-    function(x, n.col = 30,
+    function(x, n.col = 50,
              at = do.breaks(range(x, finite = TRUE), n.col),
              ..., space = "right")
 {
     foo <- list(space =
                 list(fun = "draw.colorkey",
-                     args = list(list(at = at, ...))))
+                     args = list(key = list(at = at, ...),
+                                 draw = FALSE)))
     names(foo) <- space
     foo
 }

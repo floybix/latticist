@@ -350,9 +350,12 @@ latticeStyleGUI <-
     hgroup <- ggroupThin(horizontal = TRUE, container = metagroup, expand = TRUE)
     vgroup <- ggroupThin(horizontal = FALSE, container = hgroup)
     ## add the graphics device
-    gg <- ggraphics(width = width, height = height, ps = pointsize,
-                    container = hgroup, expand = TRUE)
+    if (inherits(guiToolkit(), "guiWidgetsToolkitRGtk2")) {
+        ggraphics(width = width, height = height, ps = pointsize,
+                  container = hgroup, expand = TRUE)
+    }
     trellis.device(new = FALSE, retain = TRUE) ## i.e. new device if needed
+    par(ps = pointsize)
     ## set initial style from target device
     trellis.par.set(pars)
     assign("trellis.par.theme", trellis.par.get(), globalenv())
@@ -883,9 +886,35 @@ latticeStyleGUI <-
     updateFromSettings()
     doRedraw()
 
-    ## release size constraint on graphics device
-                                        #size(gg) <- c(-1, -1) # doesn't work
-
     return(invisible())
 }
 
+gedit <- function(..., handler = NULL, action = NULL) {
+    wid <- gWidgets::gedit(...)
+    if (!is.null(handler))
+        geditAddGoodHandlers(wid, handler = handler,
+                             action = action)
+    wid
+}
+
+geditAddGoodHandlers <- function(wid, handler, ...) {
+    ## gedit event handler only triggered when Enter pressed:
+    addHandlerChanged(wid, handler = handler, ...)
+
+    ## need to also detect changes (keystrokes)
+    ## and update when lose focus
+
+    ## local state variable (exists in function environment)
+    iNeedUpdating <- FALSE
+    ## keystroke events trigger the flag
+    setNeedUpdate <- function(h, ...)
+        iNeedUpdating <<- TRUE
+    addHandlerKeystroke(wid, handler = setNeedUpdate)
+    ## when the widget loses focus, do the update
+    doUpdateIfNeeded <- function(h, ...) {
+        if (iNeedUpdating)
+            handler(h, ...)
+        iNeedUpdating <<- FALSE
+    }
+    addHandlerBlur(wid, handler = doUpdateIfNeeded, ...)
+}

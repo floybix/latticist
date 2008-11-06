@@ -316,9 +316,10 @@ latticistToolConstructor <- function(dat, datArg)
                                 playState$latticist$spec$xvar <- NULL
                                 playState$latticist$spec$yvar <- NULL
                                 playState$latticist$spec$zvar <- NULL
-                                if (!is.null(user.data))
-                                    playState$latticist$spec$defaultPlot <-
-                                        user.data
+                                playState$latticist$spec$cond <- NULL
+                                playState$latticist$spec$cond2 <- NULL
+                                playState$latticist$spec$defaultPlot <-
+                                    user.data
                                 reCompose(playState, newPlot = TRUE)
                             })
         }

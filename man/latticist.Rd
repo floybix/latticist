@@ -39,6 +39,7 @@ latticist(dat,
     \describe{
       \item{\code{width = 450, height = 450}}{
 	size of the graphics device in pixels.
+	Note, these are ignored if not using an embedded device.
       }
       \item{\code{pointsize = 12}}{
 	text size on the graphics device.
@@ -62,8 +63,7 @@ latticist(dat,
   \pkg{gWidgets} package. This requires one of the "toolkit
   implementations" to installed:
   \pkg{gWidgetstcltk}, \pkg{gWidgetsRGtk2} or \pkg{gWidgetsrJava}.
-  This last one \emph{only} works from within the \pkg{JGR}
-  environment (and is currently untested).
+  Note that \pkg{gWidgetsrJava} is currently broken (as of version 0.0-13).
 
   The fastest way to start, without any external system requirements, is
   to \code{install.packages("gWidgetstcltk")}. However, that does not
@@ -86,8 +86,11 @@ latticist(dat,
 }
 \value{
   The \pkg{playwith} method invisibly returns the \code{playState}
-  object representing the plot window. The \pkg{gWidgets} method
-  invisibly returns the \code{gwindow} object.
+  object representing the plot window. One can close it with
+  \code{playDevOff()} or \code{dev.off()}.
+
+  The \pkg{gWidgets} method invisibly returns the \code{gwindow}
+  object. One can close it with \code{dispose()}.
 }
 \author{ Felix Andrews \email{felix@nfrac.org} }
 \references{

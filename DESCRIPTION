@@ -1,8 +1,8 @@
 Package: latticist
 Type: Package
 Title: A Lattice-based tool for exploratory visualisation
-Version: 0.9-40
-Date: 2008-11-04
+Version: 0.9-41
+Date: 2008-11-05
 Author: Felix Andrews <felix@nfrac.org>
 Maintainer: Felix Andrews <felix@nfrac.org>
 Depends: lattice (>= 0.16-3), latticeExtra (>= 0.5-4), vcd
@@ -12,7 +12,7 @@ Description: Latticist is a graphical user interface for exploratory
   visualisation. It is primarily an interface to the Lattice graphics
   system, but also produces displays from the vcd package for categorical
   data. Given a multivariate dataset (either a data frame or a table),
-  Latticist attempts to produce useful displays based on the properties
+  latticist attempts to produce useful displays based on the properties
   of the data.
 License: GPL (>= 2)
 URL: http://latticist.googlecode.com/

@@ -1,11 +1,21 @@
 
 Changes in Version 0.9-41
 
+  o fixed bug in latticist(use.playwith = TRUE), which failed
+    when a custom entry was typed into a variable field.
+
   o changed graphics device initialisation in the gWidgets
     version of latticist, so it works now with JavaGD.
 
-  o generalised the method for color-coded points used with
+  o generalised the method for color-covariates used with
     cloud and parallel, to handle multiple panels (subscripts).
+    Also, splom and stripplot now handle color-covariates too.
+
+  o style settings (and more) can be set with latticist.options.
+
+  o better help for ?latticistCompose and ?latticist.options.
+
+  o added some demos.
 
 Changes in Version 0.9-40
 

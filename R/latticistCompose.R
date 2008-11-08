@@ -48,6 +48,14 @@ latticistCompose <-
                               backtick = TRUE),
                       collapse = " ")
 
+            isUnordered <- function(x, val) {
+                ## need this because is.ordered(cut()) == FALSE!
+                if (is.call.to(x, "cut")) return(FALSE)
+                if (is.call.to(x, "cut2")) return(FALSE)
+                ## assumes is.categorical(val)
+                !is.ordered(val) && !is.shingle(val)
+            }
+
             ## work out data types
             xIsCat <- yIsCat <- zIsCat <-
                 groupsIsCat <- condIsCat <- cond2IsCat <- NA
@@ -103,14 +111,6 @@ latticistCompose <-
                 else if (!is.null(yVal))
                     nPoints <- sum(is.finite(yVal[subsetVal]))
 
-                isUnordered <- function(x, val) {
-                    ## need this because is.ordered(cut()) == FALSE!
-                    if (is.call.to(x, "cut")) return(FALSE)
-                    if (is.call.to(x, "cut2")) return(FALSE)
-                    ## assumes is.categorical(val)
-                    !is.ordered(val) && !is.shingle(val)
-                }
-
                 ## discretize
                 doXDisc <- doXDisc && (!is.null(xvar) && !xIsCat)
                 doYDisc <- doYDisc && (!is.null(yvar) && !yIsCat)
@@ -123,11 +123,18 @@ latticistCompose <-
                                 (!is.null(yvar) && !yIsCat && !doYDisc))
                 if (anyNumerics) {
                     ## use shingles where appropriate
+                    overlap <- latticist.getOption("shingle.overlap")
                     if (doXDisc) xvar <- call("equal.count", xvar, nLevels) ## or cut?
                     if (doYDisc) yvar <- call("equal.count", yvar, nLevels) ## or cut?
                     ## conditioning variables
                     if (doCondDisc) cond <- call("equal.count", cond, nLevels)
                     if (doCond2Disc) cond2 <- call("equal.count", cond2, nLevels)
+                    if (overlap != 0.5) {
+                        if (doXDisc) xvar$overlap <- overlap
+                        if (doYDisc) yvar$overlap <- overlap
+                        if (doCondDisc) cond$overlap <- overlap
+                        if (doCond2Disc) cond2$overlap <- overlap
+                    }
                 } else {
                     ## table method, need factors not shingles
                     if (doXDisc) {
@@ -183,6 +190,10 @@ latticistCompose <-
                     tooManyPanels <- TRUE
             }
 
+            ## work out (average) number of points in each panel
+            nPointsPerPanel <- round(nPoints / nCondLevels)
+            ## TODO: do this better?
+
             ## create template plot call
             call <- NULL
             call <- quote(xyplot(0 ~ 0))
@@ -203,12 +214,12 @@ latticistCompose <-
                         as.character(levels(yVal))
             }
             ## put shingle levels in strip
-            if (anyNumerics && doCondDisc &&
-                (is.null(cond2) || doCond2Disc))
-            {
-                call$strip <-
-                    quote(strip.custom(strip.levels=TRUE, strip.names=FALSE))
-            }
+#            if (anyNumerics && doCondDisc &&
+#                (is.null(cond2) || doCond2Disc))
+#            {
+#                call$strip <-
+#                    quote(strip.custom(strip.levels=TRUE, strip.names=FALSE))
+#            }
 
             ## construct plot title
             if (!is.null(xvar) || !is.null(yvar)) {
@@ -236,8 +247,8 @@ latticistCompose <-
             if (!is.null(yvar) && !yIsCat)
                 call$ylab <- yvarStr
 
-            LOTS <- latticist.getOption("LOTS")
-            HEAPS <- latticist.getOption("HEAPS")
+            MANY <- latticist.getOption("MANY")
+            VERYMANY <- latticist.getOption("VERYMANY")
 
             ## choose plot type and formula
             if (is.null(xvar) && is.null(yvar)) {
@@ -291,27 +302,32 @@ latticistCompose <-
                         ## data.frame
                         call[[1]] <- quote(splom)
                         call[[2]] <- dat.form
-                        ## discretise groups if necessary
+                        ## support color covariate
                         if (groupsIsNum) {
-                            groups <- call("cutEq", groups, nLevels)
-                            groupsVal <- eval(groups, dat, enclos)
-                            groupsIsCat <- TRUE
-                            call$groups <- groups
+                            call$groups <-
+                                call("n.level.colors", groups)
+                            call$panel <-
+                                function(..., col, pch, groups, subscripts)
+                                {
+                                    col <- groups[subscripts]
+                                    try(panel.xyplot(..., col = col, pch = 15,
+                                                     subscripts = subscripts))
+                                }
+                            call$legend <-
+                                call("simpleColorKey",
+                                     call("with", datArg, groups))
+                        } else {
+                            call$panel <-
+                                function(...) { try(panel.xyplot(...)) }
                         }
+                        if (doLines) {
+                            xyType <- c("p", latticist.getOption("xyLineType"))
+                            call$type <- xyType
+                        }
+                        call$lower.panel <- quote(expression)
+                        #function(...) { NULL }
                         call$varname.cex <- 0.7
                         call$pscales <- 0
-                        xyType <- c("p", latticist.getOption("xyLineType"))
-                        if (doLines) {
-                            tmpFun <- function(..., type) NULL
-                            body(tmpFun) <-
-                                bquote({
-                                    try(panel.xyplot(...,
-                                                     type = .( xyType )))
-                                })
-                            call$panel <- tmpFun
-                            call$lower.panel <-
-                                function(...) { NULL }
-                        }
                     }
 
                 } else if (defaultPlot == "parallel") {
@@ -321,36 +337,43 @@ latticistCompose <-
                         call[[2]] <- datArg
                         call$data <- NULL
                         call$groups <- FALSE
-                        if (is.null(x.relation))
-                            x.relation <- "free"
-                        call$strip <-
-                            quote(strip.custom(strip.names = TRUE))
-                        call$as.table <- TRUE
+                        #if (is.null(x.relation))
+                        #    x.relation <- "free"
+                        ## which of the dimensions to use for groups
+                        i.groups <- NA
                         if (!is.null(groups)) {
-                            i <- match(deparse1(groups),
-                                       names(dimnames(dat)))
-                            if (!is.na(i)) {
-                                ii <- c(seq_along(dim(dat))[-i], i)
-                                call[[2]] <- call("aperm", datArg, ii)
-                                call$groups <- TRUE
-                                call$stack <- TRUE
-                            }
+                            i.groups <- match(deparse1(groups),
+                                              names(dimnames(dat)))
                         }
+                        ## which of the dimensions to put on the axis?
+                        ## choose the one with most levels (space efficient)
+                        ## or next-most levels if that is the grouping var
+                        i.axis <- which.max(dim(dat))
+                        if (identical(i.axis, i.groups)) {
+                            tmp <- dim(dat)
+                            tmp[i.groups] <- 0
+                            i.axis <- which.max(tmp)
+                        }
+                        ii <- c(i.axis, if (!is.na(i.groups)) i.groups)
+                        condPerm <- seq_along(dim(dat))[-ii]
+                        perm <- c(i.axis, condPerm,
+                                  if (!is.na(i.groups)) i.groups)
+                        call[[2]] <- call("aperm", datArg, perm)
+                        if (!is.null(groups)) {
+                            call$groups <- TRUE
+                            call$stack <- TRUE
+                        }
+                        ## work out whether to put varnames in strips
+                        ## (if too many panels, strips get overfull)
+                        condDims <- dim(dat)[condPerm]
+                        if (prod(head(condDims, 2)) <= 9) {
+                            call$strip <-
+                                quote(strip.custom(strip.names = TRUE))
+                        }
+                        call$as.table <- TRUE
                         call$subscripts <- TRUE
-#                        call[[2]] <-
-#                            substitute(~ as.data.frame(datArg)[i],
-#                                       list(datArg = datArg,
-#                                            i = -(1+length(dim(dat))) ))
-#                        call$data <- NULL
-#                        if (!is.null(groups)) {
-#                            call$alpha <-
-#                                substitute(datArg / max(datArg),
-#                                           list(datArg = datArg))
-#                            call$data <-
-#                                call("as.data.frame", datArg)
-#                        }
                     } else {
-                        ## data.frame
+                        ## data.frame -- parallel plot
                         call[[1]] <- quote(parallel)
                         call[[2]] <- dat.form
                         if (is.null(groups)) {
@@ -459,9 +482,9 @@ latticistCompose <-
                         else
                             call[[2]] <- call("~", xvar)
                         ## settings depend on number of points, groups
-                        if (nPoints >= HEAPS) {
+                        if (nPointsPerPanel >= VERYMANY) {
                             call$plot.points <- FALSE
-                        } else if (nPoints >= LOTS) {
+                        } else if (nPointsPerPanel >= MANY) {
                             call$plot.points <- "jitter"
                             call$pch <- "+" ## like jittered rug
                         }
@@ -475,7 +498,7 @@ latticistCompose <-
                             call[[2]] <- call("~", yvar)
                         ## settings depend on number of points, groups
                         type <- "p"
-                        if (nPoints >= HEAPS) {
+                        if (nPointsPerPanel >= VERYMANY) {
                             call$f.value <- quote(ppoints(100))
                             if (doLines) type <- "l"
                         } else {
@@ -576,12 +599,12 @@ latticistCompose <-
                         call[[2]] <- call("~", yvar, xvar)
 
                     ## discretise groups if necessary
-                    if (groupsIsNum) {
-                        groups <- call("cutEq", groups, nLevels)
-                        groupsVal <- eval(groups, dat, enclos)
-                        groupsIsCat <- TRUE
-                        call$groups <- groups
-                    }
+#                    if (groupsIsNum) {
+#                        groups <- call("cutEq", groups, nLevels)
+#                        groupsVal <- eval(groups, dat, enclos)
+#                        groupsIsCat <- TRUE
+#                        call$groups <- groups
+#                    }
 
                     if (!is.null(groups)) {
                         call[[1]] <- quote(stripplot)
@@ -591,6 +614,21 @@ latticistCompose <-
                             ## TODO: check whether there are any missing values
                                         #call$fun <- quote(median)
                             call$fun <- quote(function(x) { median(x, na.rm=TRUE) })
+                        }
+                        ## support color covariate
+                        if (groupsIsNum) {
+                            call$groups <-
+                                call("n.level.colors", groups)
+                            call$panel <-
+                                function(..., col, fill, pch, groups, subscripts)
+                                {
+                                    fill <- groups[subscripts]
+                                    panel.stripplot(..., col = "#00000044", fill = fill,
+                                                    pch = 21, subscripts = subscripts)
+                                }
+                            call$legend <-
+                                call("simpleColorKey",
+                                     call("with", datArg, groups))
                         }
 
                     } else {
@@ -814,32 +852,54 @@ latticistCompose <-
             anyNumerics <- ((!is.null(xvar) && !xIsCat) ||
                             (!is.null(yvar) && !yIsCat) ||
                             (!is.null(zvar) && !zIsCat) ||
-                            is.call.to(call, "splom"))
+                            is.call.to(call, "splom") ||
+                            is.call.to(call, "parallel"))
             ## style settings for points
             if (anyNumerics) {
-                theme <- call("simpleTheme")
-                if (nCondLevels > 2)
-                    theme$cex <- 0.6
-                if (nCondLevels > 6)
-                    theme$cex <- 0.5
-                if (is.call.to(call, "splom"))
-                    theme$cex <- 0.5
-                if ((nPoints >= LOTS) && is.null(call$f.value))
+                style.3panels <- latticist.getOption("style.3panels")
+                style.7panels <- latticist.getOption("style.7panels")
+                style.MANY <- latticist.getOption("style.MANY")
+                style.VMANY <- latticist.getOption("style.VERYMANY")
+                ## modify styles for line-type plots
+                linestyle.MANY <- style.MANY
+                linestyle.VMANY <- style.VMANY
+                linestyle.MANY$alpha.line <- style.MANY$alpha.points
+                linestyle.VMANY$alpha.line <- style.VMANY$alpha.points
+                linestyle.MANY$alpha.points <- NULL
+                linestyle.VMANY$alpha.points <- NULL
+                ## construct style for current plot
+                theme <- list()
+                if (nCondLevels >= 3)
+                    theme <- modifyList(theme, style.3panels)
+                if ((nCondLevels >= 7) ||
+                    is.call.to(call, "splom"))
+                    theme <- modifyList(theme, style.7panels)
+                ## if "MANY" points, use a different plot style
+                ## (but skip this if using f.value argument to qqmath)
+                callName <- toString(call[[1]])
+                if ((nPointsPerPanel >= MANY) && is.null(call$f.value))
                 {
-                    theme$alpha.points <- if (nPoints >= HEAPS) 0.2 else 0.3
-                    ## note bug in lattice: grouped lines take alpha from points setting
-                    ## also: if conditioning, individual panels might not have many points
-                    if (!is.null(groups) || !is.null(cond))
-                        theme$alpha.points <- if (nPoints >= HEAPS) 0.4 else 0.6
-                }
-                if (nPoints >= HEAPS) {
-                    if (is.call.to(call, "xyplot") ||
-                        is.call.to(call, "stripplot")) {
-                        theme$pch <- "." ## or 0, empty square?
-                        theme$cex <- 3
+                    if (callName %in% c("parallel", "segplot")) {
+                        theme <- modifyList(theme, linestyle.MANY)
+                    } else if (callName %in%
+                               c("xyplot", "stripplot", "bwplot", "qqmath",
+                                 "levelplot", "cloud", "splom")) {
+                        theme <- modifyList(theme, style.MANY)
                     }
                 }
-                call$par.settings <- theme
+                if ((nPointsPerPanel >= VERYMANY) && is.null(call$f.value))
+                {
+                    if (callName %in% c("parallel", "segplot")) {
+                        theme <- modifyList(theme, linestyle.VMANY)
+                    } else if (callName %in%
+                               c("xyplot", "stripplot", "bwplot", "qqmath",
+                                 "levelplot", "cloud", "splom")) {
+                        theme <- modifyList(theme, style.VMANY)
+                    }
+                }
+                if (length(theme) > 0)
+                    call$par.settings <-
+                        as.call(c(list(quote(simpleTheme)), theme))
             }
             ## add a grid if there are multiple panels
             if (anyNumerics && !is.null(conds)) {
@@ -906,11 +966,13 @@ latticistCompose <-
             }
 
             ## sub-title
-            sub.fn <- latticist.getOption("sub.fn")
-            if (!is.null(sub.fn)) {
-                subt <- sub.fn
-                if (is.function(sub.fn))
-                    subt <- sub.fn(spec = spec, nPoints = nPoints)
+            sub.func <- latticist.getOption("sub.func")
+            if (isTRUE(latticist.getOption("add.sub")) &&
+                !is.null(sub.func))
+            {
+                subt <- sub.func
+                if (is.function(sub.func))
+                    subt <- sub.func(spec = spec, nPoints = nPoints)
                 if (isVCD) {
                     if (!is.call.to(call, "cotabplot"))
                         call$sub <- subt

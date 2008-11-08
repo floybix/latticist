@@ -142,7 +142,8 @@ latticistToolConstructor <- function(dat, datArg)
                 if (!is.na(index)) {
                     widget["active"] <- (index - 1)
                 } else {
-                    widget$setActiveText(value)
+                    #widget$setActiveText(value)
+                    widget$getChild()$setText(value)
                 }
             }
 

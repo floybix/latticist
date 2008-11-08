@@ -8,10 +8,18 @@
          use.playwith = TRUE,
          defaultPlot = "marginal.plot",
          xyLineType = "smooth",
-         sub.fn = defaultSubFn,
-         LOTS = 1000,
-         HEAPS = 8000,
+         add.sub = TRUE,
+         sub.func = defaultSubFn,
+         MANY = 1000,
+         VERYMANY = 8000,
+         style.MANY =
+           list(pch = 0, alpha.points = 0.6),
+         style.VERYMANY =
+           list(pch = ".", cex = 3, alpha.points = 0.3),
+         style.3panels = list(cex = 0.6),
+         style.7panels = list(cex = 0.5),
          disc.levels = 4,
+         shingle.overlap = 0.5,
          max.panels = 16,
          catch.errors = TRUE
          )

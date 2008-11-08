@@ -101,6 +101,7 @@ R", Springer. \url{http://lmdvr.r-forge.r-project.org/}
 }
 \seealso{
   \code{\link{latticistCompose}},
+  \code{\link{latticist.options}},
   \link[lattice]{Lattice},
   \code{lattice.demo} in the \pkg{TeachingDemos} package. }
 \examples{
@@ -135,7 +136,7 @@ askNext()
 
 ## Titanic dataset: Survival of passengers on the Titanic
 ## summarised by economic status (class), sex, age and survival.
-latticist(Titanic)
+latticist(Titanic, spec = list(groups = "Survived"))
 
 }
 }

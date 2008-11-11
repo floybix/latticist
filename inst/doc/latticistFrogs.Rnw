@@ -1,0 +1,221 @@
+\documentclass{beamer}
+\usepackage{hyperref}
+\newcommand{\pkg}[1]{{\fontseries{b}\selectfont #1}}
+\let\code=\texttt
+\let\proglang=\textsf
+
+\title{Latticist on Frogs}
+\subtitle{A demonstration of the \pkg{latticist} package}
+\author{Felix Andrews}
+\date{November 2008}
+
+% \VignetteIndexEntry{Latticist Frogs demo}
+% \VignettePackage{latticist}
+
+\begin{document}
+
+\SweaveOpts{engine=R,eps=FALSE,prefix.string=figs/frogs,width=5,height=3.8}
+
+<<preliminaries, echo=FALSE, results=hide>>=
+library(xtable)
+library(latticist)
+ltheme <- custom.theme.2()
+ltheme$strip.background$col <- grey(7:1 / 8)
+ltheme$strip.shingle$col <- grey(6:0 / 8)
+lattice.options(default.theme = ltheme)
+ps.options(pointsize=12)
+options(width=66, continue=" ")
+library(DAAG)
+## coerce numeric 0/1 to factor (happens in latticist())
+frogs$pres.abs <- factor(frogs$pres.abs)
+spec <- list()
+abbrevCall <- function(spec) {
+  plotCall <- latticistCompose(frogs, spec = spec)
+  plotStr <- deparse(plotCall, control = NULL)
+  toString(paste(plotStr, collapse = ""), width = 48)
+}
+makePlot <- function(spec) {
+  plotCall <- latticistCompose(frogs, spec = spec)
+  print(eval(plotCall))
+}
+@
+
+\begin{frame}<handout:0>
+  \titlepage
+\end{frame}
+
+\section{Introduction}
+\begin{frame}[fragile]
+  \frametitle{Introduction}
+
+  The \pkg{latticist} package provides an exploratory visualisation
+  application inside \proglang{R}.
+  It is primarily an interface to the \pkg{lattice}
+  graphics system, although it also produces displays from the \pkg{vcd}
+  package for categorical data.
+
+  This document gives a demonstration of \pkg{latticist} applied to the
+  \code{frogs} dataset, available in the \pkg{DAAG} package.
+
+  The data are on the distribution of the Southern Corroboree frog,
+  which occurs in the Snowy Mountains area of New South Wales,
+  Australia. \emph{-- from \code{?frogs}}
+\end{frame}
+
+
+\section{Initial display}
+\begin{frame}[fragile]
+  \frametitle{Initial display}
+<<eval=FALSE>>=
+  spec <- list()
+  latticist(frogs, spec = spec)
+@
+<<echo=FALSE>>=
+cat(abbrevCall(spec))
+@
+\begin{center}
+<<fig=TRUE, echo=FALSE>>=
+  makePlot(spec)
+@
+\end{center}
+\end{frame}
+
+
+\section{Scatterplot matrix with subset of variables}
+\begin{frame}[fragile]
+  \frametitle{Scatterplot matrix with subset of variables}
+<<>>=
+  spec <- list(varSubset = c("altitude", "distance",  "NoOfPools",
+           "NoOfSites", "avrain", "meanmin", "meanmax"),
+               defaultPlot = "splom")
+@
+<<echo=FALSE>>=
+  cat(abbrevCall(spec))
+@
+\begin{center}
+<<fig=TRUE, echo=FALSE>>=
+  makePlot(spec)
+@
+\end{center}
+\end{frame}
+
+
+\section{Parallel plot with colour (groups) variable}
+\begin{frame}[fragile]
+  \frametitle{Parallel plot with color (groups) variable}
+<<>>=
+  spec$groups <- "altitude"
+  spec$defaultPlot <- "parallel"
+@
+<<echo=FALSE>>=
+  cat(abbrevCall(spec))
+@
+\begin{center}
+<<fig=TRUE, echo=FALSE>>=
+  makePlot(spec)
+@
+\end{center}
+\end{frame}
+
+
+\section{Set x and y variables}
+\begin{frame}[fragile]
+  \frametitle{Set x and y variables}
+<<>>=
+  spec$yvar <- "northing"
+  spec$xvar <- "easting"
+@
+<<echo=FALSE>>=
+  cat(abbrevCall(spec))
+@
+\begin{center}
+<<fig=TRUE, echo=FALSE>>=
+  makePlot(spec)
+@
+\end{center}
+\end{frame}
+
+
+\section{Isometric scale, remove lines}
+\begin{frame}[fragile]
+  \frametitle{Isometric scale, remove lines}
+<<>>=
+  spec$aspect <- "iso"
+  spec$doLines <- FALSE
+@
+<<echo=FALSE>>=
+  cat(abbrevCall(spec))
+@
+\begin{center}
+<<fig=TRUE, echo=FALSE>>=
+  makePlot(spec)
+@
+\end{center}
+\end{frame}
+
+
+\section{Set grouping variable}
+\begin{frame}[fragile]
+  \frametitle{Set grouping variable}
+<<>>=
+  spec$groups <- "pres.abs"
+@ %$
+<<echo=FALSE>>=
+  cat(abbrevCall(spec))
+@
+\begin{center}
+<<fig=TRUE, echo=FALSE>>=
+  makePlot(spec)
+@
+\end{center}
+\end{frame}
+
+
+\section{Set z variable}
+\begin{frame}[fragile]
+  \frametitle{Set z variable}
+<<>>=
+  spec$zvar <- "altitude"
+@ %$
+<<echo=FALSE>>=
+  cat(abbrevCall(spec))
+@
+\begin{center}
+<<fig=TRUE, echo=FALSE>>=
+  makePlot(spec)
+@
+\end{center}
+\end{frame}
+
+
+\section{Details}
+\begin{frame}[fragile]
+  \frametitle{Details}
+
+  The results in this document were obtained using \proglang{R}
+  \Sexpr{paste(R.Version()[6:7], collapse = ".")} with the packages
+  \pkg{latticist}
+  \Sexpr{gsub("-", "--", packageDescription("latticist")$Version)},
+  \pkg{lattice}
+  \Sexpr{gsub("-", "--", packageDescription("lattice")$Version)}, and
+  \pkg{latticeExtra}
+  \Sexpr{gsub("-", "--", packageDescription("latticeExtra")$Version)}.
+  \proglang{R} itself and all packages used are available from
+  CRAN at \url{http://CRAN.R-project.org/}.
+  \bigskip
+
+  For an excellent introduction to and coverage of Lattice:
+  \begin{center}
+  \begin{tabular}{|p{0.9\textwidth}|}
+    \hline
+    Sarkar, Deepayan (2008).
+    \emph{Lattice: Multivariate Data Visualization with R},
+    Springer. \url{http://lmdvr.r-forge.r-project.org/}.\\
+    \hline
+  \end{tabular}
+  \end{center}
+\end{frame}
+
+\end{document}
+
+

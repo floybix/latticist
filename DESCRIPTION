@@ -1,8 +1,8 @@
 Package: latticist
 Type: Package
 Title: A Lattice-based tool for exploratory visualisation
-Version: 0.9-41
-Date: 2008-11-07
+Version: 0.9-42
+Date: 2008-11-11
 Author: Felix Andrews <felix@nfrac.org>
 Maintainer: Felix Andrews <felix@nfrac.org>
 Depends: lattice (>= 0.16-3), latticeExtra (>= 0.5-4), vcd

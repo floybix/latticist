@@ -1,4 +1,8 @@
 
+Changes in Version 0.9-42
+
+  o added some vignettes, replacing the previous demos.
+
 Changes in Version 0.9-41
 
   o fixed bug in latticist(use.playwith = TRUE), which failed

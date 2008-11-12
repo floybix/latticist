@@ -10,10 +10,10 @@
          xyLineType = "smooth",
          add.sub = TRUE,
          sub.func = defaultSubFn,
-         MANY = 1000,
+         MANY = 2000,
          VERYMANY = 8000,
          style.MANY =
-           list(pch = 0, alpha.points = 0.6),
+           list(pch = 4, alpha.points = 0.6),
          style.VERYMANY =
            list(pch = ".", cex = 3, alpha.points = 0.3),
          style.3panels = list(cex = 0.6),

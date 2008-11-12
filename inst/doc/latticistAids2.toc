@@ -1,0 +1,24 @@
+\beamer@endinputifotherversion {3.07pt}
+\beamer@sectionintoc {1}{Introduction}{2}{0}{1}
+\beamer@sectionintoc {2}{Initial display}{3}{0}{2}
+\beamer@sectionintoc {3}{Set x variable}{4}{0}{3}
+\beamer@sectionintoc {4}{Set grouping variable}{5}{0}{4}
+\beamer@sectionintoc {5}{Set x and y variables (categoricals)}{6}{0}{5}
+\beamer@sectionintoc {6}{Set x and y variables (mixed)}{7}{0}{6}
+\beamer@sectionintoc {7}{Time periods as segments}{8}{0}{7}
+\beamer@sectionintoc {8}{Set grouping variable}{9}{0}{8}
+\beamer@sectionintoc {9}{Set conditioning variable}{10}{0}{9}
+\beamer@sectionintoc {10}{Set x and y variables (numerics) and subset}{11}{0}{10}
+\beamer@sectionintoc {11}{Set conditioning variable}{12}{0}{11}
+\beamer@sectionintoc {12}{Details}{13}{0}{12}
+\beamer@sectionintoc {13}{Appendix: Code}{14}{0}{13}
+\beamer@subsectionintoc {13}{1}{1}{14}{0}{13}
+\beamer@subsectionintoc {13}{2}{2}{15}{0}{13}
+\beamer@subsectionintoc {13}{3}{3}{16}{0}{13}
+\beamer@subsectionintoc {13}{4}{4}{17}{0}{13}
+\beamer@subsectionintoc {13}{5}{5}{18}{0}{13}
+\beamer@subsectionintoc {13}{6}{6}{19}{0}{13}
+\beamer@subsectionintoc {13}{7}{7}{20}{0}{13}
+\beamer@subsectionintoc {13}{8}{8}{21}{0}{13}
+\beamer@subsectionintoc {13}{9}{9}{22}{0}{13}
+\beamer@subsectionintoc {13}{10}{10}{23}{0}{13}

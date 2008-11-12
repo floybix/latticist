@@ -3,6 +3,13 @@ Changes in Version 0.9-42
 
   o added some vignettes, replacing the previous demos.
 
+  o smart label positioning for mosaic plots.
+
+  o use residual-based shading by default in mosaic plots.
+
+  o changed the default style (see ?latticist.options),
+    and improved automatic titles for some plots.
+
 Changes in Version 0.9-41
 
   o fixed bug in latticist(use.playwith = TRUE), which failed

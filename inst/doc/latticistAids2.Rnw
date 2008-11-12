@@ -3,17 +3,17 @@
 \let\code=\texttt
 \let\proglang=\textsf
 
-\title{Latticist Frogs demo}
+\title{Latticist Aids2 demo}
 \subtitle{A demonstration of the \pkg{latticist} package}
 \author{Felix Andrews}
 \date{November 2008}
 
-% \VignetteIndexEntry{Latticist Frogs demo}
+% \VignetteIndexEntry{Latticist Aids2 demo}
 % \VignettePackage{latticist}
 
 \begin{document}
 
-\SweaveOpts{engine=R,eps=FALSE,echo=FALSE,prefix.string=figs/frogs,width=5,height=3.8}
+\SweaveOpts{engine=R,eps=FALSE,echo=FALSE,prefix.string=figs/Aids2,width=5,height=3.8}
 
 <<preliminaries, echo=FALSE, results=hide>>=
 library(latticist)
@@ -25,11 +25,9 @@ ps.options(pointsize = 12)
 options(width = 60, continue = " ")
 source("common.R")
 ## set up data object
-library(DAAG)
-dat <- frogs
-datArg <- quote(frogs)
-## coerce numeric 0/1 to factor (happens in latticist())
-dat$pres.abs <- factor(dat$pres.abs)
+library(MASS)
+dat <- Aids2
+datArg <- quote(Aids2)
 ## persistent variables
 spec <- list()
 plotCalls <- list()
@@ -56,10 +54,12 @@ plotNum <- 0
   Note that the displays can be customised by editing the calls used
   to generate them (see appendix for full code).
 
-  The dataset here is \code{frogs}, available in the \pkg{DAAG} package.
-  The data are on the distribution of the Southern Corroboree frog,
-  which occurs in the Snowy Mountains area of New South Wales,
-  Australia. \emph{-- from \code{?frogs}}
+  The dataset here is \code{Aids2}, available in the \pkg{MASS} package.
+  The data are on patients diagnosed with AIDS in Australia up to 1991.
+  Note \code{diag} and \code{death} are the dates of
+  diagnosis and death, \code{status} is ``A'' alive or ``D'' dead at
+  end of observation, and \code{T.categ} is the reported transmission
+  category. \emph{-- from \code{?Aids2}}
 \end{frame}
 
 
@@ -68,7 +68,7 @@ plotNum <- 0
   \frametitle{Initial display}
 <<eval=FALSE, echo=TRUE>>=
   spec <- list()
-  latticist(frogs, spec = spec)
+  latticist(Aids2, spec = spec)
 @
 <<results=tex>>=
   plotNum <- plotNum + 1
@@ -84,76 +84,11 @@ plotNum <- 0
 \end{frame}
 
 
-\section{Scatterplot matrix with subset of variables}
+\section{Set x variable}
 \begin{frame}[fragile]
-  \frametitle{Scatterplot matrix with subset of variables}
+  \frametitle{Set x variable}
 <<echo=TRUE>>=
-  spec <- list(varSubset = c("altitude", "distance",  "NoOfPools",
-           "NoOfSites", "avrain", "meanmin", "meanmax"),
-               defaultPlot = "splom")
-@
-<<results=tex>>=
-  plotNum <- plotNum + 1
-  plotCalls[[plotNum]] <-
-    latticistCompose(dat, spec = spec, datArg = datArg)
-  writeCallAndRef(plotCalls[[plotNum]], plotNum)
-@
-\begin{center}
-<<fig=TRUE>>=
-  print(eval(plotCalls[[plotNum]]))
-@
-\end{center}
-\end{frame}
-
-
-\section{Parallel plot with colour (groups) variable}
-\begin{frame}[fragile]
-  \frametitle{Parallel plot with color (groups) variable}
-<<echo=TRUE>>=
-  spec$groups <- "altitude"
-  spec$defaultPlot <- "parallel"
-@
-<<results=tex>>=
-  plotNum <- plotNum + 1
-  plotCalls[[plotNum]] <-
-    latticistCompose(dat, spec = spec, datArg = datArg)
-  writeCallAndRef(plotCalls[[plotNum]], plotNum)
-@
-\begin{center}
-<<fig=TRUE>>=
-  print(eval(plotCalls[[plotNum]]))
-@
-\end{center}
-\end{frame}
-
-
-\section{Set x and y variables}
-\begin{frame}[fragile]
-  \frametitle{Set x and y variables}
-<<echo=TRUE>>=
-  spec$yvar <- "northing"
-  spec$xvar <- "easting"
-@
-<<results=tex>>=
-  plotNum <- plotNum + 1
-  plotCalls[[plotNum]] <-
-    latticistCompose(dat, spec = spec, datArg = datArg)
-  writeCallAndRef(plotCalls[[plotNum]], plotNum)
-@
-\begin{center}
-<<fig=TRUE>>=
-  print(eval(plotCalls[[plotNum]]))
-@
-\end{center}
-\end{frame}
-
-
-\section{Isometric scale, remove lines}
-\begin{frame}[fragile]
-  \frametitle{Isometric scale, remove lines}
-<<echo=TRUE>>=
-  spec$aspect <- "iso"
-  spec$doLines <- FALSE
+  spec$xvar <- "T.categ"
 @
 <<results=tex>>=
   plotNum <- plotNum + 1
@@ -173,7 +108,89 @@ plotNum <- 0
 \begin{frame}[fragile]
   \frametitle{Set grouping variable}
 <<echo=TRUE>>=
-  spec$groups <- "pres.abs"
+  spec$groups <- "status"
+  spec$subset <- "T.categ != 'hs'"
+@
+<<results=tex>>=
+  plotNum <- plotNum + 1
+  plotCalls[[plotNum]] <-
+    latticistCompose(dat, spec = spec, datArg = datArg)
+  writeCallAndRef(plotCalls[[plotNum]], plotNum)
+@
+\begin{center}
+<<fig=TRUE>>=
+  print(eval(plotCalls[[plotNum]]))
+@
+\end{center}
+\end{frame}
+
+
+\section{Set x and y variables (categoricals)}
+\begin{frame}[fragile]
+  \frametitle{Set x and y variables (categoricals)}
+<<echo=TRUE>>=
+  spec <- list(yvar = "T.categ", xvar = "status")
+@
+<<results=tex>>=
+  plotNum <- plotNum + 1
+  plotCalls[[plotNum]] <-
+    latticistCompose(dat, spec = spec, datArg = datArg)
+  writeCallAndRef(plotCalls[[plotNum]], plotNum)
+@
+\begin{center}
+<<fig=TRUE, results=hide>>=
+  print(eval(plotCalls[[plotNum]]))
+@
+\end{center}
+\end{frame}
+
+
+\section{Set x and y variables (mixed)}
+\begin{frame}[fragile]
+  \frametitle{Set x and y variables (categorical vs numeric)}
+<<echo=TRUE>>=
+  spec <- list(yvar = "T.categ", xvar = "age")
+@
+<<results=tex>>=
+  plotNum <- plotNum + 1
+  plotCalls[[plotNum]] <-
+    latticistCompose(dat, spec = spec, datArg = datArg)
+  writeCallAndRef(plotCalls[[plotNum]], plotNum)
+@
+\begin{center}
+<<fig=TRUE>>=
+  print(eval(plotCalls[[plotNum]]))
+@
+\end{center}
+\end{frame}
+
+
+\section{Time periods as segments}
+\begin{frame}[fragile]
+  \frametitle{Time periods as segments}
+<<echo=TRUE>>=
+  spec <- list(yvar = "jitter(age)", xvar = "diag",
+               zvar = "death", doSegments = TRUE)
+@
+<<results=tex>>=
+  plotNum <- plotNum + 1
+  plotCalls[[plotNum]] <-
+    latticistCompose(dat, spec = spec, datArg = datArg)
+  writeCallAndRef(plotCalls[[plotNum]], plotNum)
+@
+\begin{center}
+<<fig=TRUE>>=
+  print(eval(plotCalls[[plotNum]]))
+@
+\end{center}
+\end{frame}
+
+
+\section{Set grouping variable}
+\begin{frame}[fragile]
+  \frametitle{Set grouping variable}
+<<echo=TRUE>>=
+  spec$groups <- "diag"
 @ %$
 <<results=tex>>=
   plotNum <- plotNum + 1
@@ -189,11 +206,54 @@ plotNum <- 0
 \end{frame}
 
 
-\section{Set z variable}
+\section{Set conditioning variable}
 \begin{frame}[fragile]
-  \frametitle{Set z variable}
+  \frametitle{Set conditioning variable}
 <<echo=TRUE>>=
-  spec$zvar <- "altitude"
+  spec$cond <- "T.categ"
+@ %$
+<<results=tex>>=
+  plotNum <- plotNum + 1
+  plotCalls[[plotNum]] <-
+    latticistCompose(dat, spec = spec, datArg = datArg)
+  writeCallAndRef(plotCalls[[plotNum]], plotNum)
+@
+\begin{center}
+<<fig=TRUE>>=
+  print(eval(plotCalls[[plotNum]]))
+@
+\end{center}
+\end{frame}
+
+
+\section{Set x and y variables (numerics) and subset}
+\begin{frame}[fragile]
+  \frametitle{Set x and y variables (numerics) and subset}
+<<echo=TRUE>>=
+  spec <- list(xvar = "age", yvar = "(death - diag)",
+               subset = "status == 'D'", doHexbin = TRUE)
+@
+<<results=tex>>=
+  plotNum <- plotNum + 1
+  plotCalls[[plotNum]] <-
+    latticistCompose(dat, spec = spec, datArg = datArg)
+  writeCallAndRef(plotCalls[[plotNum]], plotNum)
+@
+\begin{center}
+<<fig=TRUE>>=
+  print(eval(plotCalls[[plotNum]]))
+@
+\end{center}
+\end{frame}
+
+
+\section{Set conditioning variable}
+\begin{frame}[fragile]
+  \frametitle{Set conditioning variable}
+<<echo=TRUE>>=
+  spec <- modifyList(spec, list(cond = "T.categ",
+                                x.relation = "free",
+                                doLines = FALSE))
 @ %$
 <<results=tex>>=
   plotNum <- plotNum + 1
@@ -218,9 +278,11 @@ plotNum <- 0
   \pkg{latticist}
   \Sexpr{gsub("-", "--", packageDescription("latticist")$Version)#$},
   \pkg{lattice}
-  \Sexpr{gsub("-", "--", packageDescription("lattice")$Version)#$}, and
+  \Sexpr{gsub("-", "--", packageDescription("lattice")$Version)#$},
   \pkg{latticeExtra}
-  \Sexpr{gsub("-", "--", packageDescription("latticeExtra")$Version)#$}.
+  \Sexpr{gsub("-", "--", packageDescription("latticeExtra")$Version)#$},
+  and \pkg{vcd}
+  \Sexpr{gsub("-", "--", packageDescription("vcd")$Version)#$}.
   \proglang{R} itself and all packages used are available from
   CRAN at \url{http://CRAN.R-project.org/}.
   \bigskip
@@ -232,6 +294,18 @@ plotNum <- 0
     Sarkar, Deepayan (2008).
     \emph{Lattice: Multivariate Data Visualization with R},
     Springer. \url{http://lmdvr.r-forge.r-project.org/}\\
+    \hline
+  \end{tabular}
+  \end{center}
+
+  The mosaic displays from \pkg{vcd} are well described in:
+  \begin{center}
+  \begin{tabular}{|p{0.9\textwidth}|}
+    \hline
+    David Meyer, Achim Zeileis, and Kurt Hornik (2006).
+    The Strucplot Framework: Visualizing Multi-Way Contingency
+    Tables with vcd. \emph{Journal of Statistical Software}, 17(3),
+    1--48. \url{http://www.jstatsoft.org/v17/i03/}\\
     \hline
   \end{tabular}
   \end{center}

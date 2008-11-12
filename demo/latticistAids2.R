@@ -12,11 +12,27 @@ updateSpec <- function(...) {
 }
 
 updateSpec()
-updateSpec(xvar = "age", yvar = "status")
-updateSpec(yvar = "age", xvar = "diag",
+spec <- list()
+updateSpec(xvar = "T.categ")
+updateSpec(groups = "status")
+updateSpec(cond = "T.categ", x.relation = "free",
+           y.relation = "free")
+
+spec <- list()
+updateSpec(xvar = "status", yvar = "T.categ")
+
+spec <- list(
+updateSpec(xvar = "age", yvar = "T.categ")
+updateSpec(groups = "status")
+
+spec <- list()
+updateSpec(yvar = "jitter(age)", xvar = "diag",
            zvar = "death", doSegments = TRUE)
-updateSpec(xvar = "age", yvar = "T.categ",
-           zvar = NULL)
-updateSpec(xvar = "(death - diag)", yvar = "age",
-           doHexbin = TRUE)
-updateSpec(cond = "sex")
+updateSpec(groups = "diag")
+updateSpec(cond = "state")
+
+spec <- list(
+updateSpec(xvar = "age", yvar = "(death - diag)",
+           subset = "status == 'D'")
+updateSpec(doHexbin = TRUE)
+updateSpec(cond = "state")

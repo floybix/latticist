@@ -96,8 +96,16 @@ latticist(dat,
 \references{
   For an excellent introduction to and coverage of Lattice:
 
-Sarkar, Deepayan (2008) "Lattice: Multivariate Data Visualization with
-R", Springer. \url{http://lmdvr.r-forge.r-project.org/}
+  Sarkar, Deepayan (2008) \dQuote{Lattice: Multivariate Data
+    Visualization with R}, Springer.  ISBN: 978-0-387-75968-5
+  \url{http://lmdvr.r-forge.r-project.org/}
+
+  The mosaic displays and extensions from \pkg{vcd} are well described in:
+
+  David Meyer, Achim Zeileis, and Kurt Hornik (2006).
+  \dQuote{The Strucplot Framework: Visualizing Multi-Way Contingency
+    Tables with vcd}. \emph{Journal of Statistical Software}, 17(3),
+  1-48. \url{http://www.jstatsoft.org/v17/i03/}
 }
 \seealso{
   \code{\link{latticistCompose}},
@@ -107,37 +115,38 @@ R", Springer. \url{http://lmdvr.r-forge.r-project.org/}
 \examples{
 if (interactive()) {
 options(device.ask.default = FALSE)
-askNext <- function()
-    stopifnot(gconfirm("Press OK for next example..."))
 
 ## data.frame example
+latticist(iris)
 
-## CO2 dataset: see ?CO2
-## From an experiment on the cold tolerance of a grass species.
-latticist(CO2)
+## three different GUIs:
+spec <- list(yvar = "uptake", xvar = "conc",
+             groups = "Treatment", cond = "Type")
 
-## The following sequence would normally be interactive:
-askNext()
-latticist(CO2, spec = list(yvar = "uptake"))
-askNext()
-latticist(CO2, spec = list(yvar = "uptake", xvar = "conc"))
-askNext()
-latticist(CO2, spec = list(yvar = "uptake", xvar = "conc",
-                            groups = "Treatment"))
-askNext()
-latticist(CO2, spec = list(yvar = "uptake", xvar = "conc",
-                            groups = "Treatment", cond = "Type"))
-askNext()
-latticist(CO2, spec = list(yvar = "uptake", xvar = "conc",
-                            cond = "Plant"))
-askNext()
+if (require("gWidgetstcltk") &&
+    isTRUE(gconfirm("Show tcl/tk-based GUI?")))
+{
+   options(guiToolkit = "tcltk")
+   latticist(CO2, spec = spec, use.playwith = FALSE)
+}
+
+if (require("gWidgetsRGtk2") &&
+    isTRUE(gconfirm("Show RGtk2-based GUI?")))
+{
+   options(guiToolkit = "RGtk2")
+   latticist(CO2, spec = spec, use.playwith = FALSE)
+}
+
+if (require("playwith") &&
+    isTRUE(gconfirm("Show playwith-based GUI?")))
+{
+   latticist(CO2, spec = spec, use.playwith = TRUE)
+}
 
 ## table example
-
 ## Titanic dataset: Survival of passengers on the Titanic
 ## summarised by economic status (class), sex, age and survival.
 latticist(Titanic, spec = list(groups = "Survived"))
-
 }
 }
 \keyword{ hplot }

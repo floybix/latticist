@@ -73,7 +73,26 @@ latticistCompose <-
                 condIsCat <- !is.null(cond)
                 cond2IsCat <- !is.null(cond2)
 
-                nPoints <- sum(dat, na.rm = TRUE)
+                dfdat <- as.data.frame(dat)
+
+                xVal <- eval(xvar, dfdat, enclos)
+                yVal <- eval(yvar, dfdat, enclos)
+                zVal <- eval(zvar, dfdat, enclos)
+                groupsVal <- eval(groups, dfdat, enclos)
+                condVal <- eval(cond, dfdat, enclos)
+                cond2Val <- eval(cond2, dfdat, enclos)
+                subsetVal <- eval(subset, dfdat, enclos)
+
+                #nPoints <- sum(dat, na.rm = TRUE)
+                if (isTRUE(subsetVal)) {
+                    nPoints <- NROW(dfdat)
+                } else {
+                    ## handle integer/logical/recycling
+                    tmp <- rep(TRUE, NROW(dfdat))
+                    nPoints <- sum(tmp[subsetVal])
+                }
+                rm(dfdat)
+
                 anyNumerics <- FALSE
 
             } else {
@@ -178,14 +197,14 @@ latticistCompose <-
 
             ## combined conditioning term (may be NULL)
             conds <- cond
-            if (!is.null(cond2)) conds <- call("*", cond, cond2)
+            if (!is.null(cond2)) conds <- call("+", cond, cond2)
             nCondLevels <- 1
             MAXPANELS <- latticist.getOption("max.panels")
             tooManyPanels <- FALSE
             if (!is.null(conds)) {
-                nCondLevels <- nlevels(condVal)
+                nCondLevels <- nlevels(condVal[subsetVal])
                 if (!is.null(cond2Val))
-                    nCondLevels <- nCondLevels * nlevels(cond2Val)
+                    nCondLevels <- nCondLevels * nlevels(cond2Val[subsetVal])
                 if (nCondLevels > MAXPANELS)
                     tooManyPanels <- TRUE
             }
@@ -222,12 +241,15 @@ latticistCompose <-
 #            }
 
             ## construct plot title
-            if (!is.null(xvar) || !is.null(yvar)) {
+            ## (not for hypervariate plots, not for mosaic plots)
+            if ((!is.null(xvar) || !is.null(yvar)) &&
+                ((xIsCat && yIsCat) == FALSE))
+            {
                 title <- paste(c(if (!is.null(zvar)) zvarStr,
                                  if (!is.null(yvar)) yvarStr,
                                  if (!is.null(xvar)) xvarStr),
                                collapse=" vs ")
-                if (!is.null(zvar) && !is.table(dat))
+                if (!is.null(zvar))
                     title <- paste(zvarStr, "vs", xvarStr,
                                    "and", yvarStr)
                 if (is.null(xvar) || is.null(yvar))
@@ -288,12 +310,10 @@ latticistCompose <-
                         call[[2]] <- dat.expr
                         call$diag_panel <-
                             quote(pairs_diagonal_text(distribute = "margin"))
-                        #call$highlighting <- 2
-                        #call$diag_panel_args <-
-                        #    list(fill = grey.colors)
+                        call$lower_panel_args <-
+                            list(shade = TRUE)
                         call$labeling_args <-
-                            list(abbreviate = TRUE)
-                        #call$labeling <- quote(labeling_values)
+                            list(abbreviate = 5)
                         call$labeling_args <-
                             list(rep = FALSE)
                         call$groups <- NULL
@@ -543,30 +563,152 @@ latticistCompose <-
                 ## MOSAIC PLOT
                 if (doSeparateStrata && !is.null(conds)) {
                     call[[1]] <- quote(cotabplot)
-                    call$main <- NULL
+                    call$main <- NULL ## applies to each panel!
                     call$sub <- NULL
                 } else {
                     call[[1]] <- quote(mosaic)
                 }
+                ## `form` is for mosaic itself, with conditioning syntax
+                ## `subform` is for xtabs (excludes any panel-type conditioning)
                 form <- paste(c(deparse1(yvar),
                                 deparse1(xvar),
                                 if (!is.null(zvar)) deparse1(zvar),
                                 if (!is.null(groups)) deparse1(groups)),
                               collapse=" + ")
-                if (!is.null(conds))
+                subform <- form
+                if (!is.null(conds)) {
                     form <- paste(form, "|", deparse1(conds))
+                    if (doSeparateStrata == FALSE) {
+                        subform <- paste(deparse1(conds), "+", form)
+                    }
+                }
+                subform <- paste("~", subform)
                 form <- paste("~", form)
                 call[[2]] <- as.formula(form)
                 if (!is.null(groups)) {
                     call$groups <- NULL
                     call$highlighting <- deparse1(groups)
                 }
-                if (!is.call.to(call, "cotabplot"))
-                    call$labeling <- quote(labeling_values)
-                labeling_args <- list(rep = FALSE)
+#                if (!is.call.to(call, "cotabplot"))
+#                    call$labeling <- quote(labeling_values)
+                labeling_args <- list()
+                ##### TODO check nlevels for each dim
+                ## and set abbrev / rot / just / offset / margins
+#                valsOrdered <-
+#                    list(yVal,
+#                         xVal,
+#                         if (!is.null(zvar)) zVal,
+#                         if (!is.null(groups)) groupsVal)
+#                if (doSeparateStrata == FALSE) {
+#                    valsOrdered <-
+#                        c(list(if (!is.null(cond)) condVal,
+#                               if (!is.null(cond2)) cond2Val),
+#                          valsOrdered)
+#                }
+#
+#                nDims <- length(valsOrdered)
+#                names(valsOrdered) <-
+#                    c("left", "top", "right", "bottom", "", "")[1:nDims]
+#                levList <- lapply(valsOrdered, levelsOK)
+#                nLevList <- lapply(levList, length)
+#                rm(valsOrdered)
+                ## construct the table that will be plotted (for calcs)
+                if (is.table(dat)) subform <- paste("Freq", subform)
+                theTab <- xtabs(as.formula(subform), data = dat)
+                willOverlap <- function(vals, labs) {
+                    props <- as.vector(vals) / sum(vals)
+                    ## labels will be abbreviated to 6 chars
+                    chars <- pmin(6, nchar(labs))
+                    ## assume each side of the mosaic can fit ~40 chars
+                    startpos <- (props * 40) - chars/2
+                    endpos <- (props * 40) + chars/2
+                    return(any(endpos[-length(vals)] > startpos[-1]))
+                    ## TODO: use grobWidth/strwidth or something?
+                    ## assume overlap if at least 2 levels have < 10%...
+#                    smallOnes <- which(props < 0.1)
+#                    if (length(smallOnes) >= 2) {
+                        ## ...and their labels have at least 3 chars
+#                        if (any(nchar(labs[smallOnes]) >= 3))
+#                            return(TRUE)
+#                    }
+                }
+                overlapList <- list()
+                overlapList$left <-
+                    willOverlap(vals = margin.table(theTab, 1),
+                                labs = dimnames(theTab)[[1]])
+                overlapList$top <-
+                    willOverlap(vals = margin.table(theTab, 1:2)[1,],
+                                labs = dimnames(theTab)[[2]])
+                if (length(dim(theTab)) >= 3) {
+                    overlapList$right <-
+                        willOverlap(vals = margin.table(theTab, 3:1)[,dim(theTab)[2],],
+                                    labs = rep(dimnames(theTab)[[3]], dim(theTab)[1]))
+                }
+                if (length(dim(theTab)) >= 4) {
+                    overlapList$bottom <-
+                        willOverlap(vals = margin.table(theTab, c(4,2,1))[,,dim(theTab)[1] ],
+                                    labs = rep(dimnames(theTab)[[4]], dim(theTab)[2]))
+                }
+                ## construct list of labelling args
+                labargCall <- call("list")
+                rotCall <- call("c")
+                justCall <- call("c")
+                offsetCall <- call("c")
+                marginsCall <- call("c")
+                labargCall$abbreviate <- 6
                 if (is.call.to(call, "cotabplot"))
-                    labeling_args$abbreviate <- TRUE
-                call$labeling_args <- labeling_args
+                    labargCall$abbreviate <- 5
+                if (isTRUE(overlapList$left)) {
+                    rotCall$left <- 0
+                    justCall$left <- "right"
+                    offsetCall$left <- 1.8
+                    marginsCall$left <- 4.8
+#                    labargList$rot_labels <-
+#                        c(labargList$rot_labels, left = 0)
+#                    labargList$just_labels <-
+#                        c(labargList$just_labels, left = "right")
+#                    labargList$offset_varnames <-
+#                        c(labargList$offset_varnames, left = 1.8)
+#                    call$margins <- c(call$margins, left = 4.8)
+                }
+                if (isTRUE(overlapList$top)) {
+                    rotCall$top <- 30
+                    #justCall$top <- "left"
+                    offsetCall$top <- 1
+                    marginsCall$top <- 4
+#                    labargList$rot_labels <-
+#                        c(labargList$rot_labels, top = 30)
+
+                }
+                if (isTRUE(overlapList$right)) {
+                    rotCall$right <- 0
+                    justCall$right <- "left"
+                    offsetCall$right <- 1.8
+                    marginsCall$right <- 4.8
+#                    labargList$rot_labels <-
+#                        c(labargList$rot_labels, right = 0)
+#                    labargList$just_labels <-
+#                        c(labargList$just_labels, right = "left")
+#                    labargList$offset_varnames <-
+#                        c(labargList$offset_varnames, right = 1.8)
+#                    call$margins <- c(call$margins, right = 4.8)
+                }
+                if (isTRUE(overlapList$bottom)) {
+                    rotCall$bottom <- 30
+                    offsetCall$bottom <- 1
+                    marginsCall$bottom <- 4
+#                    labargList$rot_labels <-
+#                        c(labargList$rot_labels, bottom = 30)
+
+                }
+                if (any(unlist(overlapList))) {
+                    labargCall$rot_labels <- rotCall
+                    labargCall$just_labels <- justCall
+                    labargCall$offset_varnames <- offsetCall
+                }
+                call$labeling_args <- labargCall
+                if (length(marginsCall) > 1)
+                    call$margins <- marginsCall
 
             } else if (is.null(zvar)) {
                 ## BIVARIATE, WITH AT LEAST ONE NUMERIC
@@ -777,6 +919,8 @@ latticistCompose <-
                         yIsCat <- TRUE
                     }
                     form <- call("~", yvar, call("+", xvar, zvar))
+                    call$xlab <- call("paste", deparse1(xvar), "--",
+                                      deparse1(zvar))
                     if (doAsError) {
                         ## symmetric additive error form
                         ## I(x-z) + I(x+z)
@@ -784,6 +928,8 @@ latticistCompose <-
                                           call("I", call("+", xvar, zvar)))
                         call$centers <- xvar
                         call$draw.bands <- FALSE
+                        call$xlab <- call("paste", deparse1(xvar), "+/-",
+                                          deparse1(zvar))
                     }
                     if (!is.null(conds))
                         form[[3]] <- call("|", form[[3]], conds)
@@ -791,6 +937,11 @@ latticistCompose <-
                     ## colors coded by "level"
                     call$level <- groups
                     call$groups <- NULL
+                    mainStr <- paste(deparse1(xvar), "/", deparse1(zvar),
+                                       "vs", deparse1(yvar))
+                    if (!is.null(groups))
+                        mainStr <- paste(mainStr, "by", deparse1(groups))
+                    call$main <- mainStr
 
                 } else {
                     ## TRIVARIATE 3D
@@ -897,6 +1048,7 @@ latticistCompose <-
                         theme <- modifyList(theme, style.VMANY)
                     }
                 }
+                call$par.settings <- quote(simpleTheme())
                 if (length(theme) > 0)
                     call$par.settings <-
                         as.call(c(list(quote(simpleTheme)), theme))

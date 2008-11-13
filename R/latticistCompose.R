@@ -394,6 +394,8 @@ latticistCompose <-
                             call$strip <-
                                 quote(strip.custom(strip.names = TRUE))
                         }
+                        call$ylab <- names(dimnames(dat))[i.axis]
+                        call["xlab"] <- list(NULL)
                         call$as.table <- TRUE
                         call$subscripts <- TRUE
                     } else {
@@ -601,7 +603,7 @@ latticistCompose <-
                 if (!is.null(conds)) {
                     form <- paste(form, "|", deparse1(conds))
                     if (doSeparateStrata == FALSE) {
-                        subform <- paste(deparse1(conds), "+", form)
+                        subform <- paste(deparse1(conds), "+", subform)
                     }
                 }
                 subform <- paste("~", subform)
@@ -610,52 +612,73 @@ latticistCompose <-
                 if (!is.null(groups)) {
                     call$groups <- NULL
                     call$highlighting <- deparse1(groups)
-                } else {
+                }
+                if (is.null(groups)) {
                     call$shade <- TRUE
                 }
                 labeling_args <- list()
                 ## construct the table that will be plotted (for calcs)
                 if (is.table(dat)) subform <- paste("Freq", subform)
                 theTab <- xtabs(as.formula(subform), data = dat)
-                willOverlap <- function(vals, labs) {
+                overlapInfo <- function(vals, labs) {
+                    if (length(labs) <= 1) return(NULL)
                     props <- as.vector(vals) / sum(vals)
-                    ## labels will be abbreviated to 6 chars
-                    chars <- pmin(6, nchar(labs))
+                    midp <- cumsum(props) - props/2
+                    ## labels may be abbreviated to 6 chars
+                    chars <- nchar(labs)
+                    charsAbrv6 <- pmin(6, chars)
+                    charsAbrv4 <- pmin(4, chars)
+                    overlapFn <- function(chars, charSpace) {
+                        startpos <- (midp * charSpace) - chars/2
+                        endpos <- (midp * charSpace) + chars/2
+                        return(any(endpos[-length(chars)] > startpos[-1]))
+                    }
                     ## assume each side of the mosaic can fit ~40 chars
-                    startpos <- (props * 40) - chars/2
-                    endpos <- (props * 40) + chars/2
-                    return(any(endpos[-length(vals)] > startpos[-1]))
-                    ## TODO: use grobWidth/strwidth or something?
-                    ## assume overlap if at least 2 levels have < 10%...
-                                        #                    smallOnes <- which(props < 0.1)
-                                        #                    if (length(smallOnes) >= 2) {
-                    ## ...and their labels have at least 3 chars
-                                        #                        if (any(nchar(labs[smallOnes]) >= 3))
-                                        #                            return(TRUE)
-                                        #                    }
+                    ## if there is no overlap, no problem.
+                    if (!overlapFn(chars, charSpace = 40))
+                        return(NULL)
+                    ## there is an overlap; let's try abbreviating the text
+                    if (!overlapFn(charsAbrv6, charSpace = 40))
+                        return("abrv6")
+                    ## that didn't work, see if we can scale to fit ~48
+                    if (!overlapFn(chars, charSpace = 48))
+                        return("scale")
+                    ## or both
+                    if (!overlapFn(charsAbrv6, charSpace = 48))
+                        return(c("scale", "abrv6"))
+                    ## try abbreviating to 4 chars
+                    if (!overlapFn(charsAbrv4, charSpace = 48))
+                        return(c("scale", "abrv4"))
+                    ## only hope is to rotate the text
+                    return(c("rotate", "abrv6", "scale"))
                 }
+                ## TODO: account for gaps in conditioned plots?
                 overlapList <- list()
                 overlapList$left <-
-                    willOverlap(vals = margin.table(theTab, 1),
+                    overlapInfo(vals = margin.table(theTab, 1),
                                 labs = dimnames(theTab)[[1]])
                 overlapList$top <-
-                    willOverlap(vals = margin.table(theTab, 1:2)[1,],
+                    overlapInfo(vals = margin.table(theTab, 1:2)[1,],
                                 labs = dimnames(theTab)[[2]])
                 if (length(dim(theTab)) >= 3) {
                     overlapList$right <-
-                        willOverlap(vals = margin.table(theTab, 3:1)[,dim(theTab)[2],],
+                        overlapInfo(vals = margin.table(theTab, 3:1)[,dim(theTab)[2],],
                                     labs = rep(dimnames(theTab)[[3]], dim(theTab)[1]))
                 }
                 if (length(dim(theTab)) >= 4) {
                     overlapList$bottom <-
-                        willOverlap(vals = margin.table(theTab, c(4,2,1))[,,dim(theTab)[1] ],
+                        overlapInfo(vals = margin.table(theTab, c(4,2,1))[,,dim(theTab)[1] ],
                                     labs = rep(dimnames(theTab)[[4]], dim(theTab)[2]))
                 }
                 ## construct list of labelling args
                 labargCall <- call("list")
-                rotCall <- call("c")
-                justCall <- call("c")
-                offsetCall <- call("c")
+                if ("scale" %in% unlist(overlapList)) {
+                    scaleToSize <- 10
+                    if (is.call.to(call, "cotabplot"))
+                        scaleToSize <- 9
+                    labargCall$gp_labels <-
+                        call("gpar", fontsize = scaleToSize)
+                }
                 marginsCall <- call("c", 0)
                 marginsCall$left <- 3
                 marginsCall$top <- 3
@@ -663,36 +686,51 @@ latticistCompose <-
                     marginsCall$right <- 3
                 if (length(dim(theTab)) >= 4)
                     marginsCall <- call("c")
-                labargCall$abbreviate <- 6
-                if (is.call.to(call, "cotabplot"))
-                    labargCall$abbreviate <- 5 ## TODO
-                if (isTRUE(overlapList$left)) {
-                    rotCall$left <- 0
-                    justCall$left <- "right"
-                    offsetCall$left <- 1.8
-                    marginsCall$left <- 4.8
+                if (any(c("abrv6", "abrv4") %in% unlist(overlapList))) {
+                    abrvCall <- call("c")
+                    for (space in c("left", "top", "right", "bottom")) {
+                        if ("abrv6" %in% overlapList[[space]])
+                            abrvCall[space] <- list(6)
+                        if ("abrv4" %in% overlapList[[space]])
+                            abrvCall[space] <- list(4)
+                    }
+                    labargCall$abbreviate <- abrvCall
                 }
-                if (isTRUE(overlapList$top)) {
-                    rotCall$top <- 30
-                                        #justCall$top <- "right"
-                    offsetCall$top <- 1
-                    marginsCall$top <- 4
-                }
-                if (isTRUE(overlapList$right)) {
-                    rotCall$right <- 0
-                    justCall$right <- "left"
-                    offsetCall$right <- 1.8
-                    marginsCall$right <- 4.8
-                }
-                if (isTRUE(overlapList$bottom)) {
-                    rotCall$bottom <- 30
-                    offsetCall$bottom <- 1
-                    marginsCall$bottom <- 4
-                }
-                if (any(unlist(overlapList))) {
+                if ("rotate" %in% unlist(overlapList)) {
+                    rotCall <- call("c")
+                    justCall <- call("c")
+                    offsetCall <- call("c")
+                    if ("rotate" %in% overlapList$left) {
+                        rotCall$left <- 0
+                                        #justCall$left <- "right"
+                        offsetCall$left <- 1.8
+                        marginsCall$left <- 4.8
+                    }
+                    if ("rotate" %in% overlapList$top) {
+                        rotCall$top <- 30
+                                        #justCall$top <- "left"
+                        offsetCall$top <- 1
+                        marginsCall$top <- 4
+                    }
+                    if ("rotate" %in% overlapList$right) {
+                        rotCall$right <- 0
+                                        #justCall$right <- "left"
+                        offsetCall$right <- 1.8
+                        marginsCall$right <- 4.8
+                    }
+                    if ("rotate" %in% overlapList$bottom) {
+                        rotCall$bottom <- 30
+                        offsetCall$bottom <- 1
+                        marginsCall$bottom <- 4
+                    }
                     labargCall$rot_labels <- rotCall
                     labargCall$just_labels <- justCall
                     labargCall$offset_varnames <- offsetCall
+                }
+                if (is.call.to(call, "cotabplot")) {
+                    marginsCall <- 0.5
+                    if (isTRUE(call$shade))
+                        call$legend <- FALSE
                 }
                 call$labeling_args <- labargCall
                 call$margins <- marginsCall

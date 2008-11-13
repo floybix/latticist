@@ -1,0 +1,18 @@
+\beamer@endinputifotherversion {3.07pt}
+\beamer@sectionintoc {1}{Introduction}{2}{0}{1}
+\beamer@sectionintoc {2}{Initial display}{3}{0}{2}
+\beamer@sectionintoc {3}{Table display}{4}{0}{3}
+\beamer@sectionintoc {4}{Set grouping variable}{5}{0}{4}
+\beamer@sectionintoc {5}{Set x and y variables}{6}{0}{5}
+\beamer@sectionintoc {6}{Set grouping variable}{7}{0}{6}
+\beamer@sectionintoc {7}{Set conditioning variable}{8}{0}{7}
+\beamer@sectionintoc {8}{Separate strata}{9}{0}{8}
+\beamer@sectionintoc {9}{Details}{10}{0}{9}
+\beamer@sectionintoc {10}{Appendix: Code}{11}{0}{10}
+\beamer@subsectionintoc {10}{1}{1}{11}{0}{10}
+\beamer@subsectionintoc {10}{2}{2}{12}{0}{10}
+\beamer@subsectionintoc {10}{3}{3}{13}{0}{10}
+\beamer@subsectionintoc {10}{4}{4}{14}{0}{10}
+\beamer@subsectionintoc {10}{5}{5}{15}{0}{10}
+\beamer@subsectionintoc {10}{6}{6}{16}{0}{10}
+\beamer@subsectionintoc {10}{7}{7}{17}{0}{10}

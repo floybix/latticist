@@ -1,0 +1,4 @@
+inst/doc/.*\.log
+inst/doc/.*\.dvi
+inst/doc/Rplots\.pdf
+inst/doc/figs/.*

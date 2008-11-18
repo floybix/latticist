@@ -47,8 +47,9 @@ latticist_gWidgets <-
     if (inherits(guiToolkit(), "guiWidgetsToolkitRGtk2")) {
         ggraphics(width = width, height = height, ps = pointsize,
                   container = hgroup, expand = TRUE)
+    } else {
+        trellis.device(new = TRUE, retain = TRUE)
     }
-    trellis.device(new = FALSE, retain = TRUE) ## i.e. new device if needed
     par(ps = pointsize)
 
     ## persistent variables

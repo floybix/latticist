@@ -116,37 +116,36 @@ latticist(dat,
 if (interactive()) {
 options(device.ask.default = FALSE)
 
-## data.frame example
+\dontrun{
+## data frame example:
 latticist(iris)
 
-## three different GUIs:
-spec <- list(yvar = "uptake", xvar = "conc",
-             groups = "Treatment", cond = "Type")
+## table example:
+latticist(Titanic, spec = list(groups = "Survived"))
+}
+
+## The GUI comes in three flavours:
 
 if (require("gWidgetstcltk") &&
     isTRUE(gconfirm("Show tcl/tk-based GUI?")))
 {
    options(guiToolkit = "tcltk")
-   latticist(CO2, spec = spec, use.playwith = FALSE)
+   latticist(CO2, use.playwith = FALSE)
 }
 
 if (require("gWidgetsRGtk2") &&
     isTRUE(gconfirm("Show RGtk2-based GUI?")))
 {
    options(guiToolkit = "RGtk2")
-   latticist(CO2, spec = spec, use.playwith = FALSE)
+   latticist(CO2, use.playwith = FALSE)
 }
 
 if (require("playwith") &&
     isTRUE(gconfirm("Show playwith-based GUI?")))
 {
-   latticist(CO2, spec = spec, use.playwith = TRUE)
+   latticist(CO2, use.playwith = TRUE)
 }
 
-## table example
-## Titanic dataset: Survival of passengers on the Titanic
-## summarised by economic status (class), sex, age and survival.
-latticist(Titanic, spec = list(groups = "Survived"))
 }
 }
 \keyword{ hplot }

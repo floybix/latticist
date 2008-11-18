@@ -1,4 +1,8 @@
 
+Changes in Version 0.9-43 (in development)
+
+  o fixed sample size reporting for table objects.
+
 Changes in Version 0.9-42
 
   o added some vignettes, replacing the previous demos.

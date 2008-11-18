@@ -73,7 +73,7 @@ latticistCompose <-
                 condIsCat <- !is.null(cond)
                 cond2IsCat <- !is.null(cond2)
 
-                dfdat <- as.data.frame(dat)
+                dfdat <- as.data.frame(dat) ## TODO: need this?
 
                 xVal <- eval(xvar, dfdat, enclos)
                 yVal <- eval(yvar, dfdat, enclos)
@@ -83,13 +83,11 @@ latticistCompose <-
                 cond2Val <- eval(cond2, dfdat, enclos)
                 subsetVal <- eval(subset, dfdat, enclos)
 
-                #nPoints <- sum(dat, na.rm = TRUE)
                 if (isTRUE(subsetVal)) {
-                    nPoints <- NROW(dfdat)
+                    nPoints <- sum(dat, na.rm = TRUE)
                 } else {
                     ## handle integer/logical/recycling
-                    tmp <- rep(TRUE, NROW(dfdat))
-                    nPoints <- sum(tmp[subsetVal])
+                    nPoints <- sum(dfdat$Freq[subsetVal])
                 }
                 rm(dfdat)
 

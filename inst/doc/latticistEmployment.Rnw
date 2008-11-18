@@ -22,7 +22,7 @@ ltheme$strip.background$col <- grey(7:1 / 8)
 ltheme$strip.shingle$col <- grey(6:0 / 8)
 lattice.options(default.theme = ltheme)
 ps.options(pointsize = 12)
-options(width = 60, continue = " ")
+options(width = 45, continue = " ")
 source("common.R")
 ## set up data object
 dat <- Employment
@@ -40,7 +40,9 @@ plotNum <- 0
 \section{Introduction}
 \begin{frame}[fragile]
   \frametitle{Introduction}
+  \setlength{\parindent}{3ex}
 
+  \noindent
   The \pkg{latticist} package provides a graphical user interface for
   exploratory visualisation in \proglang{R}.
   It is primarily an interface to the \pkg{lattice}
@@ -76,7 +78,7 @@ plotNum <- 0
   writeCallAndRef(plotCalls[[plotNum]], plotNum)
 @
 \begin{center}
-<<fig=TRUE, results=hide>>=
+<<fig=TRUE>>=
   print(eval(plotCalls[[plotNum]]))
 @
 \end{center}
@@ -96,7 +98,7 @@ plotNum <- 0
   writeCallAndRef(plotCalls[[plotNum]], plotNum)
 @
 \begin{center}
-<<fig=TRUE, results=hide>>=
+<<fig=TRUE>>=
   print(eval(plotCalls[[plotNum]]))
 @
 \end{center}
@@ -116,7 +118,7 @@ plotNum <- 0
   writeCallAndRef(plotCalls[[plotNum]], plotNum)
 @
 \begin{center}
-<<fig=TRUE, results=hide>>=
+<<fig=TRUE>>=
   print(eval(plotCalls[[plotNum]]))
 @
 \end{center}
@@ -137,8 +139,8 @@ plotNum <- 0
   writeCallAndRef(plotCalls[[plotNum]], plotNum)
 @
 \begin{center}
-<<fig=TRUE, results=hide>>=
-  print(eval(plotCalls[[plotNum]]))
+<<fig=TRUE>>=
+  eval(plotCalls[[plotNum]])
 @
 \end{center}
 \end{frame}
@@ -157,8 +159,8 @@ plotNum <- 0
   writeCallAndRef(plotCalls[[plotNum]], plotNum)
 @
 \begin{center}
-<<fig=TRUE, results=hide>>=
-  print(eval(plotCalls[[plotNum]]))
+<<fig=TRUE>>=
+  eval(plotCalls[[plotNum]])
 @
 \end{center}
 \end{frame}
@@ -170,8 +172,7 @@ plotNum <- 0
 <<echo=TRUE>>=
   spec <- list(xvar = "EmploymentStatus",
                yvar = "EmploymentLength",
-               cond = "LayoffCause",
-               doSeparateStrata = FALSE)
+               cond = "LayoffCause")
 @ %$
 <<results=tex>>=
   plotNum <- plotNum + 1
@@ -180,18 +181,18 @@ plotNum <- 0
   writeCallAndRef(plotCalls[[plotNum]], plotNum)
 @
 \begin{center}
-<<fig=TRUE, results=hide>>=
-  print(eval(plotCalls[[plotNum]]))
+<<fig=TRUE>>=
+  eval(plotCalls[[plotNum]])
 @
 \end{center}
 \end{frame}
 
 
-\section{Separate strata}
+\section{Conditioning as integrated strata}
 \begin{frame}[fragile]
-  \frametitle{Separate strata}
+  \frametitle{Conditioning as integrated strata}
 <<echo=TRUE>>=
-  spec$doSeparateStrata <- TRUE
+  spec$doSeparateStrata <- FALSE
 @ %$
 <<results=tex>>=
   plotNum <- plotNum + 1
@@ -200,8 +201,8 @@ plotNum <- 0
   writeCallAndRef(plotCalls[[plotNum]], plotNum)
 @
 \begin{center}
-<<fig=TRUE, results=hide>>=
-  print(eval(plotCalls[[plotNum]]))
+<<fig=TRUE>>=
+  eval(plotCalls[[plotNum]])
 @
 \end{center}
 \end{frame}
@@ -221,32 +222,33 @@ plotNum <- 0
   \Sexpr{gsub("-", "--", packageDescription("lattice")$Version)#$}, and
   \pkg{latticeExtra}
   \Sexpr{gsub("-", "--", packageDescription("latticeExtra")$Version)#$}.
-  \proglang{R} itself and all packages used are available from
-  CRAN at \url{http://CRAN.R-project.org/}.
-  \bigskip
+  \smallskip
 
   For an excellent introduction to and coverage of Lattice:
-  \begin{center}
-  \begin{tabular}{|p{0.9\textwidth}|}
+  \begin{tabular}{|p{\textwidth}|}
     \hline
     Sarkar, Deepayan (2008).
     \emph{Lattice: Multivariate Data Visualization with R},
     Springer. \url{http://lmdvr.r-forge.r-project.org/}\\
     \hline
   \end{tabular}
-  \end{center}
+  \smallskip
 
   The mosaic displays from \pkg{vcd} are well described in:
-  \begin{center}
-  \begin{tabular}{|p{0.9\textwidth}|}
+  \begin{tabular}{|p{\textwidth}|}
     \hline
     David Meyer, Achim Zeileis, and Kurt Hornik (2006).
     The Strucplot Framework: Visualizing Multi-Way Contingency
     Tables with vcd. \emph{Journal of Statistical Software}, 17(3),
     1--48. \url{http://www.jstatsoft.org/v17/i03/}\\
     \hline
+    Achim Zeileis, David Meyer, and Kurt Hornik (2007).
+    Residual-based Shadings for Visualizing (Conditional) Independence.
+    \emph{Journal of Computational and Graphical Statistics}, 16(3),
+    507--525.\\
+    \hline
   \end{tabular}
-  \end{center}
+
 \end{frame}
 
 

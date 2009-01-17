@@ -292,20 +292,26 @@ latticistToolConstructor <- function(dat, datArg)
         ## HYPERVARIATE buttons
         hyperBox <- gtkHBox()
         marginalsW <- gtkButton("marginals")
-        marginalsW["tooltip-text"] <-
-            "Show marginal distributions"
         splomW <- gtkButton("splom (pairs)")
-        splomW["tooltip-text"] <-
-            "Show a scatterplot matrix (all pairs)"
         if (is.table(dat)) {
             parallelW <- gtkButton("table")
-            parallelW["tooltip-text"] <-
-                "Show a multi-dimensional table"
         } else {
             parallelW <- gtkButton("parallel")
-            parallelW["tooltip-text"] <-
-                "Show a parallel coordinates plot"
         }
+        ## 'tooltip-text' property requires recent GTK+
+        try({
+            marginalsW["tooltip-text"] <-
+                "Show marginal distributions"
+            splomW["tooltip-text"] <-
+                "Show a scatterplot matrix (all pairs)"
+            if (is.table(dat)) {
+                parallelW["tooltip-text"] <-
+                    "Show a multi-dimensional table"
+            } else {
+                parallelW["tooltip-text"] <-
+                    "Show a parallel coordinates plot"
+            }
+        }, silent = TRUE)
         goHyper <- function(widget, user.data) {
             ## ask user to choose variables, or cancel
             spec <- playState$latticist$spec

@@ -25,7 +25,7 @@ latticist(dat,
     order are of class \code{ordered}: see \code{\link{as.ordered}}.
     Note: the result of \code{\link{cut}} is by default NOT
     \code{ordered}!
-    In addition, numeric variables with discrete values in {0, 1, -1}
+    In addition, numeric variables with discrete values in (0, 1, -1)
     are converted to factors.
   }
   \item{use.playwith}{
@@ -76,13 +76,8 @@ latticist(dat,
   data points, linked brushing, etc. Note that the \pkg{playwith}
   package requires \pkg{RGtk2} and, therefore, the \emph{GTK+} libraries.
 
-  To enable all types of graphic displays, install the \pkg{deldir}
-  package, as well as \pkg{hexbin}, a BioConductor package, which can be
-  installed as follows:
-
-  \code{source("http://bioconductor.org/biocLite.R")}
-
-  \code{biocLite("hexbin")}
+  To enable all types of graphic displays, install the \pkg{hexbin} and
+  \pkg{deldir} packages.
 }
 \value{
   The \pkg{playwith} method invisibly returns the \code{playState}

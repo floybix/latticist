@@ -1,7 +1,17 @@
 
 Changes in Version 0.9-43 (in development)
 
+  o workaround for problem of spurious arguments appearing in second
+    and subsequent calls to latticistCompose() (a bug in R).
+
   o fixed sample size reporting for table objects.
+
+  o better estimate of number of points for splom and parallel,
+    resulting in more appropriate plot parameters (e.g. pch, alpha).
+
+  o playwith GUI: older versions of GTK+ failed on 'tooltip-text'.
+
+  o added a CITATION file.
 
 Changes in Version 0.9-42
 

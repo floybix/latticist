@@ -15,7 +15,7 @@
          style.MANY =
            list(pch = 4, alpha.points = 0.6),
          style.VERYMANY =
-           list(pch = ".", cex = 3, alpha.points = 0.3),
+           list(pch = ".", cex = 2.5, alpha.points = 0.3),
          style.3panels = list(cex = 0.6),
          style.7panels = list(cex = 0.5),
          disc.levels = 4,

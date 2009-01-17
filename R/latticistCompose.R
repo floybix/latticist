@@ -210,14 +210,29 @@ latticistCompose <-
             ## work out (average) number of points in each panel
             nPointsPerPanel <- round(nPoints / nCondLevels)
             ## TODO: do this better?
+            ## hypervariate plots are more complex
+            if (is.null(xvar) && is.null(yvar) &&
+                !is.table(dat))
+            {
+                nVars <- NCOL(dat)
+                if (!is.null(varSubset))
+                    nVars <- length(varSubset)
+                if (defaultPlot == "marginal.plot") {
+                    nPointsPerPanel <-
+                        nPointsPerPanel * nVars
+
+                } else if (defaultPlot == "splom") {
+                    nPointsPerPanel <-
+                        nPointsPerPanel * (nVars * (nVars - 1)) / 2
+
+                } else if (defaultPlot == "parallel") {
+                    nPointsPerPanel <-
+                        nPointsPerPanel * nVars
+                }
+            }
 
             ## create template plot call
-            ## call sometimes seems to retain args from previous runs
-            ## (ghost in the machine?)
-            if (exists("call", inherits = FALSE))
-                rm(call)
-            gc()
-            call <- quote(xyplot(0 ~ 0))
+            call <- call("xyplot", 0 ~ 0)
             call$data <- datArg
             call$groups <- if (groupsIsCat) groups
             call$subset <-
@@ -295,16 +310,25 @@ latticistCompose <-
                         groupsIsCat <- TRUE
                         call$groups <- groups
                     }
-                    ## these seems to get into *all* generated calls! (???)
-#                    call$reorder <- FALSE
-#                    if (doLines) {
-#                        if (!is.null(groups))
-#                            call$type <- c("p", "l")
-#                        else
-#                            call$type <- c("p", "h")
-#                    } else {
-#                        call$type <- "p"
-#                    }
+                    ## TODO: set plot.points according to nPointsPerPanel
+
+                    if (nPointsPerPanel >= VERYMANY) {
+                        call$plot.points <- FALSE
+                    } else if (nPointsPerPanel >= MANY) {
+                        call$plot.points <- "jitter"
+                        call$pch <- "+" ## like jittered rug
+                    }
+                    ## TODO: set scales$cex / scales$rot according to levels
+
+                    call$reorder <- FALSE
+                    if (doLines) {
+                        if (!is.null(groups))
+                            call$type <- c("p", "l")
+                        else
+                            call$type <- c("p", "h")
+                    } else {
+                        call$type <- "p"
+                    }
 
                 } else if (defaultPlot == "splom") {
                     if (is.table(dat)) {
@@ -333,23 +357,24 @@ latticistCompose <-
                                 {
                                     col <- groups[subscripts]
                                     try(panel.xyplot(..., col = col, pch = 15,
-                                                     subscripts = subscripts))
+                                        subscripts = subscripts), silent = TRUE)
                                 }
                             call$legend <-
                                 call("simpleColorKey",
                                      call("with", datArg, groups))
                         } else {
+                            ## TODO: remove braces (need to fix deparseOneLine to handle it)
                             call$panel <-
-                                function(...) { try(panel.xyplot(...)) }
+                                function(...) { try(panel.xyplot(...), silent = TRUE) }
                         }
                         if (doLines) {
                             xyType <- c("p", latticist.getOption("xyLineType"))
                             call$type <- xyType
                         }
-                        call$lower.panel <- quote(expression)
-                        #function(...) { NULL }
+                        call$lower.panel <- quote(expression) #function(...) { NULL }
                         call$varname.cex <- 0.7
                         call$pscales <- 0
+                        call["xlab"] <- list(NULL)
                     }
 
                 } else if (defaultPlot == "parallel") {

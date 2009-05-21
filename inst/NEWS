@@ -1,8 +1,8 @@
 
-Changes in Version 0.9-43 (in development)
+Changes in Version 0.9-43
 
   o workaround for problem of spurious arguments appearing in second
-    and subsequent calls to latticistCompose() (a bug in R).
+    and subsequent calls to latticistCompose() (a bug in R < 2.9).
 
   o fixed sample size reporting for table objects.
 

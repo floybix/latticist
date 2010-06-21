@@ -3,16 +3,6 @@
 ## Copyright (c) 2008 Felix Andrews <felix@nfrac.org>
 ## GPL version 2 or newer
 
-custom.theme.2 <-
-    function(symbol = brewer.pal(n = 9, name = "Set1")[c(2:1, 3:5, 7:9)], ## blue first
-             fill = brewer.pal(n = 8, name = "Accent"),
-             region = brewer.pal(n = 11, name = "RdBu"),
-             reference = "#e8e8e8", bg = "transparent", fg = "black")
-{
-    custom.theme(symbol = symbol, fill = fill, region = region,
-                 reference = reference, bg = bg, fg = fg)
-}
-
 custom.theme.black <-
     function(symbol = brewer.pal(n = 8, name = "Set2"),
              fill = brewer.pal(n = 8, name = "Set2"),
@@ -40,3 +30,4 @@ custom.theme.black <-
     foo$user.text <- expression(NULL)
     foo
 }
+

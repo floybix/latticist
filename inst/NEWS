@@ -1,6 +1,9 @@
 
 Changes in Version 0.9-43
 
+  o removed accidental dependency on playwith package in the code for
+    the gWidgets interface!
+
   o workaround for problem of spurious arguments appearing in second
     and subsequent calls to latticistCompose() (a bug in R < 2.9).
 

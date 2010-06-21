@@ -23,8 +23,7 @@ export(latticeStyleGUI)
 export(latticeStyleDemo)
 
 ## custom.theme.black.R
-export(custom.theme.black,
-       custom.theme.2)
+export(custom.theme.black)
 
 ## latticeStyleToBasePar.R
 export(latticeStyleToBasePar)

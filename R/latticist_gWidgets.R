@@ -197,7 +197,7 @@ latticist_gWidgets <-
     tmpg <- ggroupThin(container = vgroup)
     gimage(system.file("etc", "latticist_title.gif", package="latticist"),
            container = tmpg)
-    glabel(paste(" v.", packageDescription("playwith")$Version, " "),
+    glabel(paste(" v.", packageDescription("latticist")$Version, " "),
            container = tmpg)
     ## "reset" button
     wid.reset <-

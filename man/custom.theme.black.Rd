@@ -1,16 +1,10 @@
 \name{custom.theme.black}
 \alias{custom.theme.black}
-\alias{custom.theme.2}
 \title{ Alternative Lattice themes }
 \description{
   Alternative Lattice themes.
 }
 \usage{
-custom.theme.2(symbol = brewer.pal(n = 9, name = "Set1")[c(2:1, 3:5, 7:9)],
-               fill = brewer.pal(n = 8, name = "Accent"),
-               region = brewer.pal(n = 11, name = "RdBu"),
-               reference = "#e8e8e8", bg = "transparent", fg = "black")
-
 custom.theme.black(symbol = brewer.pal(n = 8, name = "Set2"),
                    fill = brewer.pal(n = 8, name = "Set2"),
                    region = rev(brewer.pal(n = 9, name = "YlOrRd")),
@@ -28,8 +22,8 @@ custom.theme.black(symbol = brewer.pal(n = 8, name = "Set2"),
                black backgrounds. }
 }
 \details{
-  These are wrappers around \code{\link[latticeExtra]{custom.theme}}
-  with different defaults. They can be used as Lattice themes.
+  This is a wrapper around \code{\link[latticeExtra]{custom.theme}}
+  with different defaults. It can be used as a Lattice themes.
 
   The \code{etc} argument sets:
   \itemize{
@@ -53,8 +47,6 @@ custom.theme.black(symbol = brewer.pal(n = 8, name = "Set2"),
 \examples{
 opar <- trellis.par.get()
 
-trellis.par.set(custom.theme.2())
-latticeStyleDemo()
 trellis.par.set(custom.theme.black())
 latticeStyleDemo()
 

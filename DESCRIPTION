@@ -2,7 +2,7 @@ Package: latticist
 Type: Package
 Title: A graphical user interface for exploratory visualisation
 Version: 0.9-43
-Date: 2008-11-17
+Date: 2010-06-21
 Author: Felix Andrews <felix@nfrac.org>
 Maintainer: Felix Andrews <felix@nfrac.org>
 Depends: lattice (>= 0.16-3), latticeExtra (>= 0.5-4), vcd

@@ -6,8 +6,8 @@ Date: 2010-06-21
 Author: Felix Andrews <felix@nfrac.org>
 Maintainer: Felix Andrews <felix@nfrac.org>
 Depends: lattice (>= 0.16-3), latticeExtra (>= 0.5-4), vcd
-Imports: gWidgets (>= 0.0-30)
-Suggests: playwith, gWidgetstcltk, hexbin, deldir, tripack, DAAG, RGtk2
+Imports: gWidgets (>= 0.0-30), utils
+Suggests: playwith, hexbin, deldir, tripack, DAAG, RGtk2, gWidgetsRGtk2, gWidgetstcltk, MASS
 Description: Latticist provides a graphical user interface for exploratory
   visualisation. It is primarily an interface to the Lattice graphics
   system, but also produces displays from the vcd package for categorical

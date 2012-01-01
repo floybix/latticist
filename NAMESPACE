@@ -1,4 +1,4 @@
-
+ importFrom(utils, modifyList)
 import(gWidgets)
 ## import RGtk2 only if it is available
 #if ( "RGtk2" %in% rownames(utils::installed.packages()) ) {

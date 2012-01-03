@@ -79,7 +79,7 @@ plotNum <- 0
 @
 \begin{center}
 <<fig=TRUE>>=
-  print(eval(plotCalls[[plotNum]]))
+  plot(eval(plotCalls[[plotNum]]))
 @
 \end{center}
 \end{frame}
@@ -99,7 +99,7 @@ plotNum <- 0
 @
 \begin{center}
 <<fig=TRUE>>=
-  print(eval(plotCalls[[plotNum]]))
+  plot(eval(plotCalls[[plotNum]]))
 @
 \end{center}
 \end{frame}
@@ -119,7 +119,7 @@ plotNum <- 0
 @
 \begin{center}
 <<fig=TRUE>>=
-  print(eval(plotCalls[[plotNum]]))
+  plot(eval(plotCalls[[plotNum]]))
 @
 \end{center}
 \end{frame}

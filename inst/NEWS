@@ -1,4 +1,8 @@
 
+Changes in Version 0.9-44
+
+  o import utils::modifyList (R CMD check problem).
+
 Changes in Version 0.9-43
 
   o removed accidental dependency on playwith package in the code for

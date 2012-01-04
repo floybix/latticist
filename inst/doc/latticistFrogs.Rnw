@@ -13,9 +13,10 @@
 
 \begin{document}
 
-\SweaveOpts{engine=R,eps=FALSE,echo=FALSE,prefix.string=figs/frogs,width=5,height=3.8}
+\SweaveOpts{echo=FALSE,prefix.string=figs/frogs,width=5,height=3.8}
 
 <<preliminaries, echo=FALSE, results=hide>>=
+if (!file.exists("figs")) dir.create("figs")
 library(latticist)
 ltheme <- custom.theme.2()
 ltheme$strip.background$col <- grey(7:1 / 8)
@@ -80,7 +81,7 @@ plotNum <- 0
 @
 \begin{center}
 <<fig=TRUE>>=
-  plot(eval(plotCalls[[plotNum]]))
+  print(eval(plotCalls[[plotNum]]))
 @
 \end{center}
 \end{frame}
@@ -102,7 +103,7 @@ plotNum <- 0
 @
 \begin{center}
 <<fig=TRUE>>=
-  plot(eval(plotCalls[[plotNum]]))
+  print(eval(plotCalls[[plotNum]]))
 @
 \end{center}
 \end{frame}
@@ -123,7 +124,7 @@ plotNum <- 0
 @
 \begin{center}
 <<fig=TRUE>>=
-  plot(eval(plotCalls[[plotNum]]))
+  print(eval(plotCalls[[plotNum]]))
 @
 \end{center}
 \end{frame}
@@ -144,7 +145,7 @@ plotNum <- 0
 @
 \begin{center}
 <<fig=TRUE>>=
-  plot(eval(plotCalls[[plotNum]]))
+  print(eval(plotCalls[[plotNum]]))
 @
 \end{center}
 \end{frame}
@@ -165,7 +166,7 @@ plotNum <- 0
 @
 \begin{center}
 <<fig=TRUE>>=
-  plot(eval(plotCalls[[plotNum]]))
+  print(eval(plotCalls[[plotNum]]))
 @
 \end{center}
 \end{frame}
@@ -185,7 +186,7 @@ plotNum <- 0
 @
 \begin{center}
 <<fig=TRUE>>=
-  plot(eval(plotCalls[[plotNum]]))
+  print(eval(plotCalls[[plotNum]]))
 @
 \end{center}
 \end{frame}
@@ -205,7 +206,7 @@ plotNum <- 0
 @
 \begin{center}
 <<fig=TRUE>>=
-  plot(eval(plotCalls[[plotNum]]))
+  print(eval(plotCalls[[plotNum]]))
 @
 \end{center}
 \end{frame}

@@ -1,10 +1,10 @@
 Package: latticist
 Type: Package
 Title: A graphical user interface for exploratory visualisation
-Version: 0.9-44
-Date: 2012-01-03
+Version: 0.9-45
+Date: 2014-09-22
 Author: Felix Andrews <felix@nfrac.org>
-Maintainer: Felix Andrews <felix@nfrac.org>
+Maintainer: Liviu Andronic <landronimirc@gmail.com>
 Depends: lattice (>= 0.16-3), latticeExtra (>= 0.5-4), vcd
 Imports: gWidgets (>= 0.0-30), utils
 Suggests: playwith, hexbin, deldir, tripack, DAAG, RGtk2, gWidgetsRGtk2, gWidgetstcltk, MASS

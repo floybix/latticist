@@ -1,9 +1,13 @@
- importFrom(utils, modifyList)
+importFrom(utils, modifyList)
 import(gWidgets)
 ## import RGtk2 only if it is available
 #if ( "RGtk2" %in% rownames(utils::installed.packages()) ) {
 #  import(RGtk2)
 #}
+
+import(lattice)
+import(latticeExtra)
+import(vcd)
 
 ## latticist.R
 export(latticist)

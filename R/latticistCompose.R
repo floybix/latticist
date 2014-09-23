@@ -44,7 +44,7 @@ latticistCompose <-
                 nLevels <- latticist.getOption("disc.levels")
 
             deparse1 <- function(expr)
-                paste(deparse(expr, width = 500, control = NULL,
+                paste(deparse(expr, width.cutoff = 500, control = NULL,
                               backtick = TRUE),
                       collapse = " ")
 

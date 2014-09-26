@@ -1,4 +1,10 @@
 
+Changes in Version 0.9-45
+
+  o import packages lattice, latticeExtra, vcd (R CMD check problem).
+  o fix location of vignettes (R CMD check problem).
+  o fix minor NOTES (R CMD check problem).
+
 Changes in Version 0.9-44
 
   o import utils::modifyList (R CMD check problem).

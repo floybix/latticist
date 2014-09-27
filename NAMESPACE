@@ -5,9 +5,10 @@ import(gWidgets)
 #  import(RGtk2)
 #}
 
+importFrom(vcd, mosaic, cotabplot)
 import(lattice)
 import(latticeExtra)
-import(vcd)
+#import(vcd)
 
 ## latticist.R
 export(latticist)

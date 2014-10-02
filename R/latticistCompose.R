@@ -3,6 +3,29 @@
 ## Copyright (c) 2008 Felix Andrews <felix@nfrac.org>
 ## GPL version 2 or newer
 
+##`compute.packet` imported from latticist 0.20-29
+##to avoid CRAN checks Warnings for `:::` calls
+compute.packet <-
+    function(cond, levels)
+{
+    id <- !(do.call("pmax", lapply(cond, is.na)))
+    stopifnot(any(id))
+    for (i in seq_along(cond))
+    {
+        var <- cond[[i]]
+        id <-
+            id & (
+                  if (is.shingle(var))
+                  ((var >= levels(var)[[levels[i]]][1]) &
+                   (var <= levels(var)[[levels[i]]][2]))
+                  else
+                  (as.numeric(var) == levels[i])
+                  )
+    }
+    id
+}
+
+
 latticistCompose <-
     function(dat, spec = list(),
              datArg = substitute(dat),
@@ -916,7 +939,7 @@ latticistCompose <-
                                 packetDefs <- as.data.frame(t(packetDefs))
                                 xSubVal <- if (isTRUE(subset)) xVal else xVal[subsetVal]
                                 panelType <- sapply(packetDefs, function(packLev) {
-                                    id <- lattice:::compute.packet(condList, levels=packLev)
+                                    id <- compute.packet(condList, levels=packLev)
                                     unlist(guessPanelType(xSubVal[id]))
                                 })
                                 panelType <- as.data.frame(t(panelType))
